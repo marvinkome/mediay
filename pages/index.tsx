@@ -1,7 +1,16 @@
-import type { NextPage } from "next";
+import NextLink from "next/link";
+import { Link } from "@chakra-ui/react";
 
-const Home: NextPage = () => {
-  return <p>hello world</p>;
+const Page = () => {
+  return (
+    <div>
+      <h1>Future landing page</h1>
+
+      <NextLink href="/signup">
+        <Link>Get started</Link>
+      </NextLink>
+    </div>
+  );
 };
 
-export default Home;
+export default Page;
