@@ -14,7 +14,11 @@ const queryClient = new QueryClient({
   },
 });
 
-function App({ Component, pageProps }: AppProps) {
+const LayoutDefault = ({ children }: any) => <>{children}</>;
+
+function App({ Component, pageProps }: any) {
+  const Layout = Component.Layout || LayoutDefault;
+
   return (
     <ChakraProvider theme={theme}>
       <Head>
@@ -22,7 +26,9 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
 
       <QueryClientProvider client={queryClient}>
-        <Component {...pageProps} />
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
       </QueryClientProvider>
     </ChakraProvider>
   );
