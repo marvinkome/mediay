@@ -11,7 +11,7 @@ const AppLayout = ({ children }: any) => {
         <Container maxW="container.lg">
           <Stack py={5} direction="row" justifyContent="space-between" alignItems="center">
             <Stack direction="row" alignItems="center" spacing={4}>
-              <Heading fontSize="2xl" fontWeight="800">
+              <Heading fontSize="2xl" fontWeight="800" color="primary.500">
                 Mediay
               </Heading>
             </Stack>
@@ -23,9 +23,9 @@ const AppLayout = ({ children }: any) => {
                 px={4}
                 py={1}
                 h="auto"
-                bgColor="rgb(0 0 0 / 8%)"
-                _hover={{ bgColor: "rgb(0 0 0 / 12%)" }}
-                _active={{ bgColor: "rgb(0 0 0 / 12%)" }}
+                bgColor="primary.50"
+                _hover={{ bgColor: "primary.100" }}
+                _active={{ bgColor: "primary.100" }}
                 onClick={() => null}
               >
                 Marvin
@@ -40,37 +40,27 @@ const AppLayout = ({ children }: any) => {
           <chakra.aside py={6} px={4} flex="1" rounded="2rem" bgColor="#fff" border="1px solid" borderColor="rgb(0 0 0 / 4%)">
             <Stack mb={8} spacing={4} alignItems="flex-start">
               <NextLink href="/app" passHref>
-                <Button as="a" variant="ghost" fontWeight="500" fontSize="md" rounded="full" _hover={{ bgColor: "rgb(0 0 0 / 8%)" }}>
+                <Button as="a" variant="ghost" color="initial" fontSize="sm" rounded="full" colorScheme="primary">
                   All Groups
                 </Button>
               </NextLink>
 
               <NextLink href="/app/received" passHref>
-                <Button as="a" variant="ghost" fontWeight="500" fontSize="md" rounded="full" _hover={{ bgColor: "rgb(0 0 0 / 8%)" }}>
+                <Button as="a" variant="ghost" color="initial" fontSize="sm" rounded="full" colorScheme="primary">
                   Created Groups
                 </Button>
               </NextLink>
 
               <NextLink href="/app/pending" passHref>
-                <Button as="a" variant="ghost" fontWeight="500" fontSize="md" rounded="full" _hover={{ bgColor: "rgb(0 0 0 / 8%)" }}>
+                <Button as="a" variant="ghost" color="initial" fontSize="sm" rounded="full" colorScheme="primary">
                   Joined Groups
                 </Button>
               </NextLink>
             </Stack>
 
             <CreateGroup>
-              <Button
-                w="full"
-                leftIcon={<FiPlus />}
-                size="lg"
-                fontSize="md"
-                rounded="full"
-                bgColor="black"
-                color="#fff"
-                _hover={{ bgColor: "blackAlpha.800" }}
-                _active={{ bgColor: "blackAlpha.700" }}
-              >
-                New Group
+              <Button w="full" leftIcon={<FiPlus />} size="lg" fontSize="md" rounded="full" colorScheme="primary">
+                Create Group
               </Button>
             </CreateGroup>
           </chakra.aside>

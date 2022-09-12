@@ -84,9 +84,9 @@ export const CreateInvoice = ({ children }: CreateInvoiceProps) => {
         onClick: () => onOpen(),
       })}
 
-      <Modal isOpen={isOpen} onClose={onClose} scrollBehavior="inside">
+      <Modal isOpen={isOpen} onClose={onClose} size="full" scrollBehavior="inside">
         <ModalOverlay />
-        <ModalContent rounded="20px" overflow="hidden" maxW="container.lg">
+        <ModalContent my={8} rounded="20px" overflow="hidden" maxW="container.lg">
           <ModalHeader px={4} py={2}>
             <Stack direction="row" alignItems="center" justifyContent="center">
               <IconButton
@@ -97,9 +97,9 @@ export const CreateInvoice = ({ children }: CreateInvoiceProps) => {
                 rounded="full"
                 position="absolute"
                 onClick={() => onClose()}
-                bgColor="rgb(0 0 0 / 8%)"
-                aria-label="close-invoice"
-                _hover={{ bgColor: "rgb(0 0 0 / 12%)" }}
+                bgColor="primary.50"
+                aria-label="close-modal"
+                _hover={{ bgColor: "primary.100" }}
                 icon={<Icon boxSize="24px" as={IoMdCloseCircle} />}
               />
 
@@ -213,49 +213,30 @@ export const CreateInvoice = ({ children }: CreateInvoiceProps) => {
                     </Stack>
 
                     <Stack direction="row" spacing={8} justifyContent="space-between" alignItems="stretch">
-                      <FormControl>
+                      <FormControl isRequired>
                         <FormLabel fontSize="sm" fontWeight="400">
-                          Service username or email
+                          Instructions
                         </FormLabel>
 
-                        <Input
+                        <Textarea
                           fontSize="sm"
-                          placeholder="username"
-                          autoComplete="off"
-                          value={service.title}
+                          rows={4}
+                          placeholder="Explain how to use this service"
+                          value={service.instructions}
                           onChange={(e) => {
                             const services = formData.services;
-                            services[idx].title = e.target.value;
+                            services[idx].instructions = e.target.value;
 
                             setFormData({ ...formData, services });
                           }}
                         />
-                      </FormControl>
 
-                      <FormControl>
-                        <FormLabel fontSize="sm" fontWeight="400">
-                          Service password
-                        </FormLabel>
-
-                        <Input
-                          fontSize="sm"
-                          type="password"
-                          autoComplete="new-password"
-                          placeholder="********"
-                          value={service.title}
-                          onChange={(e) => {
-                            const services = formData.services;
-                            services[idx].title = e.target.value;
-
-                            setFormData({ ...formData, services });
-                          }}
-                        />
+                        <FormHelperText px={2} fontSize="xs" fontWeight="400" color="gray.700">
+                          The group instructions will be stored securely, and would be only available to people who have access to the
+                          group.
+                        </FormHelperText>
                       </FormControl>
                     </Stack>
-                    <Text px={2} fontSize="xs" fontWeight="400" color="gray.700">
-                      Your username and password will be stored securely, and would be only available to people who have access to the
-                      group.
-                    </Text>
 
                     {formData.services.length > 1 && (
                       <chakra.div>
@@ -311,17 +292,14 @@ export const CreateInvoice = ({ children }: CreateInvoiceProps) => {
                   size="md"
                   fontSize="sm"
                   rounded="xl"
-                  bgColor="black"
-                  color="#fff"
-                  _hover={{ bgColor: "blackAlpha.800" }}
-                  _active={{ bgColor: "blackAlpha.700" }}
+                  colorScheme="primary"
                   leftIcon={<TbFileInvoice />}
                   type="submit"
                 >
                   Create Group
                 </Button>
 
-                <Button variant="ghost" fontWeight="600" size="md" fontSize="sm" rounded="xl" colorScheme="gray" type="submit">
+                <Button variant="ghost" color="initial" fontWeight="600" size="md" fontSize="sm" rounded="xl" colorScheme="primary">
                   Reset
                 </Button>
               </Stack>
