@@ -30,10 +30,10 @@ const isPresent = (value: any) => {
   return value !== null && value !== undefined && typeof value === "string" && value.trim().length > 0;
 };
 
-type CreateInvoiceProps = {
+type CreateGroupProps = {
   children: React.ReactElement;
 };
-export const CreateInvoice = ({ children }: CreateInvoiceProps) => {
+const CreateGroup = ({ children }: CreateGroupProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
 
   const [client, setClient] = React.useState<string>();
@@ -311,4 +311,4 @@ export const CreateInvoice = ({ children }: CreateInvoiceProps) => {
   );
 };
 
-export default CreateInvoice;
+export default CreateGroup;

@@ -1,15 +1,17 @@
 import NextLink from "next/link";
-import { Link } from "@chakra-ui/react";
+import { Button, Container, Heading, Text } from "@chakra-ui/react";
+import SignupModal from "components/auth/signup";
 
 const Page = () => {
   return (
-    <div>
-      <h1>Future landing page</h1>
+    <Container py={10}>
+      <Heading>Future landing page</Heading>
+      <Text>Use this button to create an account</Text>
 
-      <NextLink href="/signup">
-        <Link>Get started</Link>
-      </NextLink>
-    </div>
+      <SignupModal>
+        <Button my={6}>Get started</Button>
+      </SignupModal>
+    </Container>
   );
 };
 
