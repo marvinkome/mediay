@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.10.0",
     "@marvinkome/react-oauth2": "^1.0.5",
     "@prisma/client": "^4.1.1",
+    "@supabase/supabase-js": "^1.35.6",
     "@tanstack/react-query": "^4.0.10",
     "framer-motion": "^7.0.0",
     "google-auth-library": "^8.1.1",

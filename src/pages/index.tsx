@@ -1,6 +1,5 @@
-import NextLink from "next/link";
 import { Button, Container, Heading, Text } from "@chakra-ui/react";
-import SignupModal from "components/auth/signup";
+import SignupModal from "components/auth";
 
 const Page = () => {
   return (

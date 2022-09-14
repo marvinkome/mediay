@@ -1,25 +1,15 @@
 import React from "react";
-import { useOath2Login } from "@marvinkome/react-oauth2";
+import { useOath2Login } from "libs/react-oauth2";
+import { supabaseUrl } from "libs/supabase";
 
-export function useGoogleSignIn() {
+export function useOAuth(urlParams: any) {
   const url = React.useMemo(() => {
-    const url = "https://accounts.google.com/o/oauth2/v2/auth";
-    const params = new URLSearchParams({
-      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
-      redirect_uri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URL || "",
-      response_type: "code",
-      access_type: "offline",
-      prompt: "consent",
-      scope: "https://www.googleapis.com/auth/userinfo.email",
-    }).toString();
+    const url = `${supabaseUrl}/auth/v1/authorize`;
+    const params = new URLSearchParams(urlParams).toString();
 
     return `${url}?${params}`;
-  }, []);
+  }, [urlParams]);
 
-  const googleSignIn = useOath2Login({
-    id: "google-login",
-    url,
-  });
-
-  return googleSignIn;
+  const signIn = useOath2Login({ url, id: "google-login", withHash: true });
+  return signIn;
 }
