@@ -34,7 +34,7 @@ const Page = () => {
     <Center bgColor="#FCFCFC" minH="100vh">
       <Container maxW="sm" py={6} px={6} bgColor="#fff" shadow="base" rounded="2xl">
         <Stack textAlign="center">
-          <Heading fontSize="xl">Sign up to Mediay</Heading>
+          <Heading fontSize="xl">Log in to Mediay</Heading>
 
           <Text fontSize="sm" color="rgb(0 0 0 / 48%)">
             Use your email or another service to continue
@@ -74,14 +74,6 @@ const Page = () => {
               <>
                 <FormControl isRequired>
                   <FormLabel mb={1} fontSize="xs" fontWeight="400" requiredIndicator={<span />}>
-                    Full name
-                  </FormLabel>
-
-                  <Input type="text" name="name" fontSize="sm" placeholder="Your full name" onChange={(e) => setEmail(e.target.value)} />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel mb={1} fontSize="xs" fontWeight="400" requiredIndicator={<span />}>
                     Email address
                   </FormLabel>
 
@@ -106,10 +98,10 @@ const Page = () => {
           </Stack>
 
           <Text textAlign="center" fontSize="sm" color="rgb(0 0 0 / 68%)">
-            Already have an account?{" "}
-            <NextLink href="/login" passHref>
+            Don&apos;t have an account?{" "}
+            <NextLink href="/signup" passHref>
               <Link textDecoration="underline" fontWeight="600">
-                Login
+                Sign up
               </Link>
             </NextLink>
           </Text>

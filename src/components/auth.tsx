@@ -4,8 +4,8 @@ import {
   Button,
   chakra,
   Container,
-  Divider,
   FormControl,
+  FormLabel,
   Heading,
   Icon,
   IconButton,
@@ -19,18 +19,22 @@ import {
   Text,
   useDisclosure,
 } from "@chakra-ui/react";
+import { motion } from "framer-motion";
 import { IoMdCloseCircle } from "react-icons/io";
 import { FcGoogle } from "react-icons/fc";
-import { ImAppleinc } from "react-icons/im";
 import { useOAuth } from "hooks/auth";
 import { useMutation } from "@tanstack/react-query";
 import supabase from "libs/supabase";
+
+const MotionFormControl = motion(FormControl);
 
 type SignupProps = {
   children: React.ReactElement;
 };
 const Auth = ({ children }: SignupProps) => {
+  const [isSignup, setIsSignup] = React.useState(false);
   const [email, setEmail] = React.useState("");
+  const [fullName, setFullName] = React.useState("");
   const { isOpen, onClose, onOpen } = useDisclosure();
 
   // oauth login
@@ -42,10 +46,23 @@ const Auth = ({ children }: SignupProps) => {
 
   // email login
   const emailAuthMutation = useMutation(async (data: any) => {
-    return await supabase.auth.signIn(data, {
+    if (!isSignup) {
+      const { payload } = await Api().get(`/auth?email=${data.email}`);
+      if (!payload.exists) {
+        setIsSignup(true);
+        throw new Error("no-account");
+      }
+    }
+
+    // signin
+    const { error } = await supabase.auth.signIn(data, {
       shouldCreateUser: true,
-      redirectTo: "http://localhost:3000/email-callback",
+      // HACK:: Supabase doesn't allow signIn with extra data, so we pass the fullName as query params
+      // so it can be used from the callback link
+      redirectTo: `http://localhost:3000/email-callback?full_name=${encodeURIComponent(fullName)}`,
     });
+
+    if (error) throw error;
   });
   const onEmailSubmit = async (e: React.FormEvent<any>) => {
     e.preventDefault();
@@ -108,30 +125,45 @@ const Auth = ({ children }: SignupProps) => {
                   )}
                 </Stack>
 
-                <Button
-                  variant="outline"
-                  fontSize="sm"
-                  colorScheme="primary"
-                  leftIcon={<Icon boxSize="22" as={ImAppleinc} color="black" />}
-                >
-                  <chakra.span lineHeight="none">Continue with Apple</chakra.span>
-                </Button>
+                <Text textAlign="center" fontSize="xs" color="rgb(0 0 0 / 58%)">
+                  OR
+                </Text>
 
-                <Divider />
-
-                <Stack as="form" onSubmit={onEmailSubmit}>
+                <Stack as="form" spacing={4} onSubmit={onEmailSubmit}>
                   {emailAuthMutation.isSuccess ? (
                     <Text fontSize="sm">
                       We&apos;ve sent an email to <chakra.span fontWeight="600">{email}</chakra.span>, it contains a link to continue.
                     </Text>
                   ) : (
                     <>
+                      {isSignup && (
+                        <MotionFormControl initial={{ y: 20 }} animate={{ y: 0 }} isRequired>
+                          <FormLabel mb={1} fontSize="xs" fontWeight="400" requiredIndicator={<span />}>
+                            Full name
+                          </FormLabel>
+
+                          <Input
+                            type="text"
+                            name="name"
+                            fontSize="sm"
+                            placeholder="Your full name"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                          />
+                        </MotionFormControl>
+                      )}
+
                       <FormControl isRequired>
+                        <FormLabel mb={1} fontSize="xs" fontWeight="400" requiredIndicator={<span />}>
+                          Email address
+                        </FormLabel>
+
                         <Input
                           type="email"
                           name="email"
                           fontSize="sm"
                           placeholder="Your email"
+                          value={email}
                           onChange={(e) => setEmail(e.target.value)}
                         />
                       </FormControl>
@@ -140,7 +172,7 @@ const Auth = ({ children }: SignupProps) => {
                         Continue with Email
                       </Button>
 
-                      {emailAuthMutation.isError && (
+                      {emailAuthMutation.isError && (emailAuthMutation.error as any)?.message !== "no-account" && (
                         <Text color="red.600" fontSize="xs">
                           Error authenticating with Email. Please try again or use a different option
                         </Text>
@@ -149,7 +181,7 @@ const Auth = ({ children }: SignupProps) => {
                   )}
                 </Stack>
 
-                <Text fontSize="sm" color="rgb(0 0 0 / 48%)">
+                <Text fontSize="xs" color="rgb(0 0 0 / 58%)">
                   By continuing, you agree to our Terms of Use and our Privacy Policy.
                 </Text>
               </Stack>

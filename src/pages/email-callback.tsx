@@ -10,8 +10,9 @@ const Page = () => {
   });
 
   React.useEffect(() => {
+    const queryParams = toParams(window.location.search.replace(/^\?/, ""));
     const params = toParams(window.location.hash.replace(/^#/, ""));
-    authMutation.mutate(params);
+    authMutation.mutate({ ...params, ...queryParams });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

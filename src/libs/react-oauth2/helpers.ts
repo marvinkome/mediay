@@ -18,7 +18,7 @@ export function toParams(query: string) {
   return q.split("&").reduce((values: any, param) => {
     const [key, value] = param.split("=");
 
-    values[key] = value;
+    values[key] = decodeURIComponent(value);
 
     return values;
   }, {});

@@ -7,11 +7,22 @@ const LOG_TAG = "[auth]";
 
 const handle = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const { method, body } = req;
+    const { method, body, query } = req;
 
     switch (method) {
+      case "GET": {
+        const { email } = query;
+        console.log(LOG_TAG, "checking if email exists");
+
+        let user = await prisma.user.findUnique({
+          where: { email: email as string },
+        });
+
+        return res.send({ exists: !!user });
+      }
       case "POST": {
-        const { access_token } = body;
+        // HACK:: Receiving the fullName from the body for magic link login
+        const { access_token, full_name } = body;
 
         if (!access_token) {
           console.warn(LOG_TAG, "no access token in payload", { body });
@@ -31,19 +42,23 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).json({ error: "Authentication failed" });
         }
 
+        console.log(LOG_TAG, "Supabase user found", { supabaseUser });
+
         const supabaseId = supabaseUser.id;
         const email = supabaseUser.email;
+        const fullName = full_name || supabaseUser.user_metadata?.full_name;
 
         let user = await prisma.user.findFirst({
           where: { email, supabaseId },
         });
 
         if (!user) {
-          console.log(LOG_TAG, "No user found, creating new user", { supabaseId });
+          console.log(LOG_TAG, "No user found, creating new user", { supabaseId, data: { fullName } });
           user = await prisma.user.create({
             data: {
               email,
               supabaseId,
+              fullName,
             },
           });
         }
