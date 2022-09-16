@@ -1,7 +1,12 @@
 import React from "react";
-import { Container, Heading, LinkBox, LinkOverlay, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 import AppLayout from "components/app.layout";
 import NextLink from "next/link";
+import prisma from "libs/prisma";
+import CreateGroup from "components/groups/create";
+import { GetServerSideProps } from "next";
+import { withSessionSsr } from "libs/session";
+import { Button, chakra, Container, Heading, LinkBox, LinkOverlay, SimpleGrid, Stack, Text } from "@chakra-ui/react";
+import { FiPlus } from "react-icons/fi";
 
 const Page = () => {
   return (
@@ -12,8 +17,22 @@ const Page = () => {
         </Heading>
       </Stack>
 
+      <Container maxW="sm" py={6}>
+        <Stack alignItems="center" spacing={4}>
+          <Text textAlign="center">You have not created any groups yet. Use this button to create your first group</Text>
+
+          <chakra.div>
+            <CreateGroup>
+              <Button leftIcon={<FiPlus />} fontSize="sm" rounded="full" colorScheme="primary">
+                Create your first group
+              </Button>
+            </CreateGroup>
+          </chakra.div>
+        </Stack>
+      </Container>
+
       <SimpleGrid columns={3} spacing={4}>
-        {Array.from({ length: 4 }).map((_, idx) => {
+        {Array.from({ length: 0 }).map((_, idx) => {
           return (
             <LinkBox
               key={idx}
@@ -57,6 +76,40 @@ const Page = () => {
     </Container>
   );
 };
+
+const getServerSidePropsFn: GetServerSideProps = async ({ req }) => {
+  if (!req.session.data) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.session.data.userId },
+    select: { fullName: true },
+  });
+
+  if (!user) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      layoutProps: {
+        user,
+      },
+    },
+  };
+};
+export const getServerSideProps = withSessionSsr(getServerSidePropsFn);
 
 Page.Layout = AppLayout;
 export default Page;

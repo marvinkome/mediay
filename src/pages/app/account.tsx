@@ -1,26 +1,14 @@
 import React from "react";
-import Head from "next/head";
-import {
-  Link,
-  Button,
-  chakra,
-  Container,
-  Flex,
-  Heading,
-  Icon,
-  Image,
-  Input,
-  Stack,
-  Text,
-  Box,
-  HStack,
-  Grid,
-  Divider,
-  Avatar,
-} from "@chakra-ui/react";
 import AppLayout from "components/app.layout";
+import prisma from "libs/prisma";
+import { GetServerSideProps } from "next";
+import { withSessionSsr } from "libs/session";
+import { Button, Container, Heading, Stack, Text } from "@chakra-ui/react";
 
-const Page = () => {
+type PageProps = {
+  user: { fullName?: string; email: string };
+};
+const Page = ({ user }: PageProps) => {
   return (
     <Container maxW="container.xl" py={6}>
       <Stack mb={6}>
@@ -35,7 +23,7 @@ const Page = () => {
             Full Name
           </Heading>
 
-          <Text fontWeight="600">Marvin Kome</Text>
+          <Text fontWeight="600">{user.fullName || "--"}</Text>
         </Stack>
 
         <Stack spacing={2}>
@@ -43,35 +31,49 @@ const Page = () => {
             Email Address
           </Heading>
 
-          <Text fontWeight="600">marvinkome@gmail.com</Text>
-        </Stack>
-
-        <Stack spacing={2}>
-          <Heading fontWeight="400" fontSize="xs" textTransform="uppercase">
-            Phone Number
-          </Heading>
-
-          <Text fontWeight="600">0123456789</Text>
-        </Stack>
-
-        <Stack direction="row" spacing={2}>
-          <Button
-            px={6}
-            colorScheme="primary"
-            rounded="24px"
-            variant="ghost"
-            bgColor="primary.50"
-            fontSize="sm"
-            border="1px solid transparent"
-            _hover={{ borderColor: "primary.600" }}
-          >
-            Edit Account
-          </Button>
+          <Text fontWeight="600">{user.email}</Text>
         </Stack>
       </Stack>
     </Container>
   );
 };
+
+const getServerSidePropsFn: GetServerSideProps = async ({ req }) => {
+  if (!req.session.data) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.session.data.userId },
+    select: { fullName: true, email: true },
+  });
+
+  if (!user) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      user,
+      layoutProps: {
+        user: {
+          fullName: user.fullName,
+        },
+      },
+    },
+  };
+};
+export const getServerSideProps = withSessionSsr(getServerSidePropsFn);
 
 Page.Layout = AppLayout;
 export default Page;

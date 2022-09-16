@@ -1,4 +1,3 @@
-import type { AppProps } from "next/app";
 import { ChakraProvider } from "@chakra-ui/react";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import Head from "next/head";
@@ -18,6 +17,7 @@ const LayoutDefault = ({ children }: any) => <>{children}</>;
 
 function App({ Component, pageProps }: any) {
   const Layout = Component.Layout || LayoutDefault;
+  const layoutProps = pageProps.layoutProps || {};
 
   return (
     <ChakraProvider theme={theme}>
@@ -26,7 +26,7 @@ function App({ Component, pageProps }: any) {
       </Head>
 
       <QueryClientProvider client={queryClient}>
-        <Layout>
+        <Layout {...layoutProps}>
           <Component {...pageProps} />
         </Layout>
       </QueryClientProvider>
