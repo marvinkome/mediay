@@ -15,4 +15,24 @@ model User {
   email      String  @unique
   supabaseId String  @unique
   fullName   String?
+  Group      Group[]
+}
+
+model Group {
+  id       String    @id @default(cuid())
+  name     String
+  notes    String?
+  admin    User      @relation(fields: [adminId], references: [id])
+  adminId  String
+  services Service[]
+}
+
+model Service {
+  id             String  @id @default(cuid())
+  name           String
+  cost           Float
+  numberOfPeople Int
+  instructions   String
+  Group          Group?  @relation(fields: [groupId], references: [id])
+  groupId        String?
 }

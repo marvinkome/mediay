@@ -1,4 +1,5 @@
 import React from "react";
+import Api from "libs/api";
 import {
   chakra,
   Button,
@@ -25,10 +26,7 @@ import {
 import { FiPlus, FiTrash2 } from "react-icons/fi";
 import { TbFileInvoice } from "react-icons/tb";
 import { IoMdCloseCircle } from "react-icons/io";
-
-const isPresent = (value: any) => {
-  return value !== null && value !== undefined && typeof value === "string" && value.trim().length > 0;
-};
+import { useMutation } from "@tanstack/react-query";
 
 type CreateGroupProps = {
   children: React.ReactElement;
@@ -36,46 +34,74 @@ type CreateGroupProps = {
 const CreateGroup = ({ children }: CreateGroupProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
 
-  const [client, setClient] = React.useState<string>();
-  const [clientDetails, setClientDetails] = React.useState({
-    name: "",
-    address: "",
-  });
-
   const [formData, setFormData] = React.useState<any>({
-    issueDate: null,
-    dueDate: null,
-    payoutAddress: "",
+    name: "",
+    notes: "",
     services: [
       {
-        title: "",
-        cost: 0,
-        description: "",
+        name: "",
+        customName: "",
+        cost: "",
+        numberOfPeople: "",
+        instructions: "",
       },
     ],
   });
 
-  const [dateErrors, setDateErrors] = React.useState<any[]>([]);
-  const dateValidator: any = {
-    issueDate: isPresent,
-    dueDate: isPresent,
+  const addNewService = () => {
+    setFormData({
+      ...formData,
+      services: formData.services.concat({
+        name: "",
+        customName: "",
+        cost: "",
+        numberOfPeople: "",
+        instructions: "",
+      }),
+    });
   };
 
-  const onSubmitForm = (e: React.FormEvent) => {
+  const resetInput = () => {
+    setFormData({
+      name: "",
+      notes: "",
+      services: [
+        {
+          name: "",
+          customName: "",
+          cost: "",
+          numberOfPeople: "",
+          instructions: "",
+        },
+      ],
+    });
+  };
+
+  const createGroupMutation = useMutation(async (data: any) => {
+    return Api().post("/group/create", data);
+  });
+
+  const onSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // validate date
-    setDateErrors([]);
-    const dateFieldsWithError = Object.keys(dateValidator).filter((field) => {
-      const validator = dateValidator[field];
-      return !validator(formData[field]);
-    });
-    if (dateFieldsWithError.length) {
-      setDateErrors(dateFieldsWithError);
-      return;
-    }
+    const data = {
+      ...formData,
+      services: formData.services.map((service: any) => ({
+        name: service.name === "custom" ? service.customName : service.name,
+        cost: Number(service.cost),
+        numberOfPeople: Number(service.numberOfPeople),
+        instructions: service.instructions,
+      })),
+    };
 
     // submit form
+    await createGroupMutation.mutateAsync(data);
+
+    // TODO: update groups query data
+
+    // reset and close modal
+    resetInput();
+    onClose();
   };
 
   return (
@@ -108,15 +134,20 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
           </ModalHeader>
 
           <ModalBody p={0} bgColor="#FCFCFC">
-            <Container maxW="container.md" py={8} as="form" onSubmit={onSubmitForm}>
-              <Stack spacing={6} my={6}>
+            <Container maxW="container.md" py={4} as="form" onSubmit={onSubmitForm}>
+              <Stack spacing={6} my={4}>
                 <Stack>
                   <FormControl isRequired>
                     <FormLabel fontSize="sm" fontWeight="400">
                       Group name
                     </FormLabel>
 
-                    <Input fontSize="sm" placeholder="Groupies" />
+                    <Input
+                      fontSize="sm"
+                      placeholder="Streaming buddies"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
                   </FormControl>
                 </Stack>
               </Stack>
@@ -128,7 +159,7 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                 <Divider borderColor="rgb(0 0 0 / 26%)" />
               </Stack>
 
-              <Stack spacing={6} my={6} divider={<StackDivider borderColor="rgb(0 0 0 / 16%)" />}>
+              <Stack spacing={6} my={4} divider={<StackDivider borderColor="rgb(0 0 0 / 16%)" />}>
                 {formData.services.map((service: any, idx: any) => (
                   <Stack spacing={4} key={idx}>
                     <Stack direction="row" spacing={8} justifyContent="space-between" alignItems="stretch">
@@ -137,13 +168,23 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                           Service
                         </FormLabel>
 
-                        <Select fontSize="sm" placeholder="Select service" value={client} onChange={(e) => setClient(e.target.value)}>
+                        <Select
+                          fontSize="sm"
+                          placeholder="Select service"
+                          value={service.name}
+                          onChange={(e) => {
+                            const services = formData.services;
+                            services[idx].name = e.target.value;
+
+                            setFormData({ ...formData, services });
+                          }}
+                        >
                           <option value="netflix">Netflix</option>
                           <option value="disney+">Disney+</option>
                           <option value="prime-video">Prime Video</option>
                           <option value="spotify">Spotify</option>
                           <option value="youtube">Youtube</option>
-                          <option value="create">Custom service</option>
+                          <option value="custom">Custom service</option>
                         </Select>
 
                         <FormHelperText px={2} fontSize="xs" fontWeight="400" color="gray.700">
@@ -151,7 +192,7 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                         </FormHelperText>
                       </FormControl>
 
-                      {false && (
+                      {service.name === "custom" && (
                         <FormControl isRequired>
                           <FormLabel fontSize="sm" fontWeight="400">
                             Service name
@@ -160,10 +201,10 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                           <Input
                             fontSize="sm"
                             placeholder="ACME TV"
-                            value={service.title}
+                            value={service.customName}
                             onChange={(e) => {
                               const services = formData.services;
-                              services[idx].title = e.target.value;
+                              services[idx].customName = e.target.value;
 
                               setFormData({ ...formData, services });
                             }}
@@ -175,14 +216,18 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                     <Stack direction="row" spacing={8} justifyContent="space-between" alignItems="stretch">
                       <FormControl isRequired>
                         <FormLabel fontSize="sm" fontWeight="400">
-                          Total Cost
+                          Cost
                         </FormLabel>
 
                         <Input
                           fontSize="sm"
                           placeholder="0"
                           type="number"
+                          min={0}
+                          step=".01"
                           value={service.cost}
+                          // @ts-ignore
+                          onWheel={(e) => e.target.blur()}
                           onChange={(e) => {
                             const services = formData.services;
                             services[idx].cost = e.target.value;
@@ -194,17 +239,20 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
 
                       <FormControl isRequired>
                         <FormLabel fontSize="sm" fontWeight="400">
-                          Number of people
+                          Max Number of people
                         </FormLabel>
 
                         <Input
                           fontSize="sm"
                           placeholder="0"
                           type="number"
-                          value={service.cost}
+                          min={1}
+                          value={service.numberOfPeople}
+                          // @ts-ignore
+                          onWheel={(e) => e.target.blur()}
                           onChange={(e) => {
                             const services = formData.services;
-                            services[idx].cost = e.target.value;
+                            services[idx].numberOfPeople = e.target.value;
 
                             setFormData({ ...formData, services });
                           }}
@@ -220,8 +268,8 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
 
                         <Textarea
                           fontSize="sm"
-                          rows={4}
-                          placeholder="Explain how to use this service"
+                          rows={3}
+                          placeholder="Explain how to access this service, including credentials to the service"
                           value={service.instructions}
                           onChange={(e) => {
                             const services = formData.services;
@@ -263,7 +311,7 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                 ))}
               </Stack>
 
-              <Stack my={6} direction="row" alignItems="center" spacing={4}>
+              <Stack my={4} direction="row" alignItems="center" spacing={4}>
                 <chakra.div>
                   <Button
                     variant="outline"
@@ -272,12 +320,7 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                     fontSize="sm"
                     leftIcon={<Icon as={FiPlus} />}
                     rounded="xl"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        services: formData.services.concat({ title: "", cost: 0, description: "" }),
-                      })
-                    }
+                    onClick={() => addNewService()}
                   >
                     Add Service
                   </Button>
@@ -286,22 +329,56 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                 <Divider borderColor="rgb(0 0 0 / 26%)" />
               </Stack>
 
-              <Stack direction="row" alignItems="center" spacing={4} my={6}>
-                <Button
-                  fontWeight="600"
-                  size="md"
-                  fontSize="sm"
-                  rounded="xl"
-                  colorScheme="primary"
-                  leftIcon={<TbFileInvoice />}
-                  type="submit"
-                >
-                  Create Group
-                </Button>
+              <Stack my={6}>
+                <FormControl>
+                  <FormLabel fontSize="sm" fontWeight="400">
+                    Notes
+                  </FormLabel>
 
-                <Button variant="ghost" color="initial" fontWeight="600" size="md" fontSize="sm" rounded="xl" colorScheme="primary">
-                  Reset
-                </Button>
+                  <Textarea
+                    fontSize="sm"
+                    rows={3}
+                    placeholder="Any extra notes for the group"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  />
+                </FormControl>
+              </Stack>
+
+              <Stack my={6} spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={4}>
+                  <Button
+                    fontWeight="600"
+                    size="md"
+                    fontSize="sm"
+                    rounded="xl"
+                    colorScheme="primary"
+                    leftIcon={<TbFileInvoice />}
+                    type="submit"
+                    isLoading={createGroupMutation.isLoading}
+                  >
+                    Create Group
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    color="initial"
+                    fontWeight="600"
+                    size="md"
+                    fontSize="sm"
+                    rounded="xl"
+                    colorScheme="primary"
+                    onClick={() => resetInput()}
+                  >
+                    Reset
+                  </Button>
+                </Stack>
+
+                {createGroupMutation.isError && (
+                  <Text color="red.500" fontSize="sm">
+                    {(createGroupMutation.error as any)?.message}
+                  </Text>
+                )}
               </Stack>
             </Container>
           </ModalBody>

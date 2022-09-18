@@ -25,7 +25,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         const { access_token, full_name } = body;
 
         if (!access_token) {
-          console.warn(LOG_TAG, "no access token in payload", { body });
+          console.warn("%s no access token in payload - %j", LOG_TAG, { body });
           return res.status(400).json({ error: "Authentication failed" });
         }
 
@@ -33,16 +33,16 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         if (error) throw error;
 
         if (!supabaseUser) {
-          console.warn(LOG_TAG, "No user found for access token", { token: access_token });
+          console.warn("%s No user found for access token - %j", LOG_TAG, { token: access_token });
           return res.status(400).json({ error: "Authentication failed" });
         }
 
         if (!supabaseUser.email) {
-          console.error(LOG_TAG, "User email not provided ", { token: access_token, user: supabaseUser });
+          console.error("%s User email not provided - %j", LOG_TAG, { token: access_token, user: supabaseUser });
           return res.status(400).json({ error: "Authentication failed" });
         }
 
-        console.log(LOG_TAG, "Supabase user found", { supabaseUser });
+        console.log("%s Supabase user found - %j", LOG_TAG, { supabaseUser, full_name });
 
         const supabaseId = supabaseUser.id;
         const email = supabaseUser.email;
@@ -53,7 +53,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         });
 
         if (!user) {
-          console.log(LOG_TAG, "No user found, creating new user", { supabaseId, data: { fullName } });
+          console.log("%s No user found, creating new user - %j", LOG_TAG, { supabaseId, data: { fullName } });
           user = await prisma.user.create({
             data: {
               email,
@@ -74,11 +74,11 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.send({ redirect: true, url: `/app` });
       }
       default:
-        console.warn(LOG_TAG, "unauthorized method", method);
+        console.warn("%s unauthorized method - %s", LOG_TAG, method);
         return res.status(500).send({ error: "unauthorized method" });
     }
   } catch (error) {
-    console.error(LOG_TAG, "general error", {
+    console.error("%s general error - %j", LOG_TAG, {
       name: (error as any).name,
       message: (error as any).message,
       stack: (error as any).stack,
