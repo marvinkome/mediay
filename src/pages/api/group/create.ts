@@ -76,10 +76,17 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
               },
             },
 
-            admin: {
-              connect: {
-                id: session.userId,
-              },
+            members: {
+              create: [
+                {
+                  isAdmin: true,
+                  user: {
+                    connect: {
+                      id: session.userId,
+                    },
+                  },
+                },
+              ],
             },
           },
         });

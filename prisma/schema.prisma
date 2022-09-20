@@ -11,20 +11,50 @@ datasource db {
 }
 
 model User {
-  id         String  @id @default(cuid())
-  email      String  @unique
-  supabaseId String  @unique
+  id         String         @id @default(cuid())
+  email      String         @unique
+  supabaseId String         @unique
   fullName   String?
-  Group      Group[]
+  groups     GroupMember[]
+  requests   GroupRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Group {
   id       String    @id @default(cuid())
   name     String
   notes    String?
-  admin    User      @relation(fields: [adminId], references: [id])
-  adminId  String
   services Service[]
+
+  members GroupMember[]
+  request GroupRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model GroupMember {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  group   Group  @relation(fields: [groupId], references: [id])
+  groupId String
+
+  isAdmin Boolean
+
+  @@id([userId, groupId])
+}
+
+model GroupRequest {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  group   Group  @relation(fields: [groupId], references: [id])
+  groupId String
+
+  @@id([userId, groupId])
 }
 
 model Service {
@@ -35,4 +65,7 @@ model Service {
   instructions   String
   Group          Group?  @relation(fields: [groupId], references: [id])
   groupId        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }

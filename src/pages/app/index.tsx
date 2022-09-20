@@ -8,7 +8,13 @@ import { withSessionSsr } from "libs/session";
 import { Button, chakra, Container, Heading, LinkBox, LinkOverlay, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 import { FiPlus } from "react-icons/fi";
 
-const Page = () => {
+type PageProps = {
+  groups: {
+    id: string;
+    name: string;
+  }[];
+};
+const Page = ({ groups }: PageProps) => {
   return (
     <Container maxW="container.xl" py={6}>
       <Stack mb={6}>
@@ -17,25 +23,27 @@ const Page = () => {
         </Heading>
       </Stack>
 
-      <Container maxW="sm" py={6}>
-        <Stack alignItems="center" spacing={4}>
-          <Text textAlign="center">You have not created any groups yet. Use this button to create your first group</Text>
+      {!groups.length && (
+        <Container maxW="sm" py={6}>
+          <Stack alignItems="center" spacing={4}>
+            <Text textAlign="center">You have not created any groups yet. Use this button to create your first group</Text>
 
-          <chakra.div>
-            <CreateGroup>
-              <Button leftIcon={<FiPlus />} fontSize="sm" rounded="full" colorScheme="primary">
-                Create your first group
-              </Button>
-            </CreateGroup>
-          </chakra.div>
-        </Stack>
-      </Container>
+            <chakra.div>
+              <CreateGroup>
+                <Button leftIcon={<FiPlus />} fontSize="sm" rounded="full" colorScheme="primary">
+                  Create your first group
+                </Button>
+              </CreateGroup>
+            </chakra.div>
+          </Stack>
+        </Container>
+      )}
 
       <SimpleGrid columns={3} spacing={4}>
-        {Array.from({ length: 0 }).map((_, idx) => {
+        {groups.map((group, idx) => {
           return (
             <LinkBox
-              key={idx}
+              key={group.id}
               as={Stack}
               bgColor="#fff"
               rounded="1.5em"
@@ -52,6 +60,7 @@ const Page = () => {
               <Heading
                 fontSize="md"
                 fontWeight="700"
+                color="primary.500"
                 borderBottom="1px solid rgb(0 0 0 / 70%)"
                 whiteSpace="nowrap"
                 textOverflow="ellipsis"
@@ -59,8 +68,8 @@ const Page = () => {
                 maxW="calc(100%)"
                 overflow="hidden"
               >
-                <NextLink href="/app/group/1234" passHref>
-                  <LinkOverlay>RLM</LinkOverlay>
+                <NextLink href={`/app/group/${group.id}`} passHref>
+                  <LinkOverlay>{group.name}</LinkOverlay>
                 </NextLink>
               </Heading>
 
@@ -101,8 +110,24 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req }) => {
     };
   }
 
+  const groups = await prisma.group.findMany({
+    take: 10,
+    where: {
+      members: {
+        some: {
+          userId: req.session.data.userId,
+        },
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
   return {
     props: {
+      groups,
       layoutProps: {
         user,
       },

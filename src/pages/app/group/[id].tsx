@@ -1,5 +1,8 @@
 import React from "react";
+import prisma from "libs/prisma";
 import AppLayout from "components/app.layout";
+import { GetServerSideProps } from "next";
+import { withSessionSsr } from "libs/session";
 import {
   Button,
   chakra,
@@ -16,9 +19,11 @@ import {
   Text,
   useDisclosure,
 } from "@chakra-ui/react";
-import { FiEye, FiLink2, FiEdit3 } from "react-icons/fi";
+import { FiEye } from "react-icons/fi";
 import { IoMdCloseCircle } from "react-icons/io";
-import { IoCopyOutline } from "react-icons/io5";
+import { IoCopyOutline, IoPersonRemoveOutline } from "react-icons/io5";
+import { RiUserAddLine, RiEditLine } from "react-icons/ri";
+import dayjs from "dayjs";
 
 const CredentialModal = ({ children }: any) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
@@ -84,133 +89,232 @@ const CredentialModal = ({ children }: any) => {
   );
 };
 
-const Page = () => {
+type PageProps = {
+  isAdmin: boolean;
+  isMember: boolean;
+  group: {
+    name: string;
+    notes: string;
+    createdAt: string;
+    members: {
+      isAdmin: boolean;
+      user: { id: string; fullName: string };
+    }[];
+    services: {
+      id: string;
+      name: string;
+      numberOfPeople: number;
+    }[];
+  };
+};
+const Page = ({ group, isAdmin, isMember = false }: PageProps) => {
   return (
     <Container maxW="container.lg" py={6}>
       <Stack direction="row" justifyContent="space-between">
         <chakra.div>
           <Heading fontSize="2xl" fontWeight="600" mb={1}>
-            RLM
+            {group.name}
           </Heading>
 
           <Stack direction="row" alignItems="center" fontSize="sm">
-            <Text color="rgb(0 0 0 / 48%)">Created on 11 Jul. 2022</Text>
+            <Text color="rgb(0 0 0 / 48%)">Created on {dayjs(group.createdAt).format("DD MMM. YYYY")}</Text>
             <chakra.span color="rgb(0 0 0 / 48%)">•</chakra.span>
-            <Button minW="0" px={0} variant="link" fontSize="sm" _hover={{ textDecoration: "none", color: "rgb(0 0 0 / 68%)" }}>
-              Edit group
-            </Button>
-          </Stack>
-        </chakra.div>
-
-        <chakra.div>
-          <Text mb={1} fontWeight="700">
-            Members
-          </Text>
-
-          <Text color="rgb(0 0 0 / 58%)">Marvin, Sophia, Alaric, Jane</Text>
-        </chakra.div>
-      </Stack>
-
-      <chakra.section py={6}>
-        <Stack py={4} direction="row" justifyContent="space-between" borderBottom="1px dashed rgb(0 0 0 / 15%)">
-          <Text>Subscriptions</Text>
-        </Stack>
-
-        <Stack spacing={6} py={4}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack>
-              <Text>Spotify</Text>
-              <Text fontSize="sm" color="rgb(0 0 0 / 70%)">
-                1/3 spaces left
-              </Text>
-            </Stack>
-
-            <CredentialModal>
-              <Button
-                size="sm"
-                aria-label="View password"
-                rounded="full"
-                variant="outline"
-                leftIcon={<FiEye />}
-                _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
-              >
-                View instructions
-              </Button>
-            </CredentialModal>
-          </Stack>
-
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack>
-              <Text>Netflix</Text>
-              <Text fontSize="sm" color="rgb(0 0 0 / 70%)">
-                3/3 spaces left
-              </Text>
-            </Stack>
-
-            <CredentialModal>
-              <Button
-                size="sm"
-                aria-label="View password"
-                rounded="full"
-                variant="outline"
-                leftIcon={<FiEye />}
-                _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
-              >
-                View instructions
-              </Button>
-            </CredentialModal>
-          </Stack>
-
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack>
-              <Text>Disney+</Text>
-              <Text fontSize="sm" color="rgb(0 0 0 / 70%)">
-                0/3 spaces left
-              </Text>
-            </Stack>
-
-            <CredentialModal>
-              <Button
-                size="sm"
-                aria-label="View password"
-                rounded="full"
-                variant="outline"
-                leftIcon={<FiEye />}
-                _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
-              >
-                View instructions
-              </Button>
-            </CredentialModal>
-          </Stack>
-        </Stack>
-
-        <Stack py={4} spacing={4} borderTop="1px dashed rgb(0 0 0 / 15%)">
-          <Text>Note</Text>
-
-          <Text width="75%" fontSize="sm" fontWeight="400" color="rgb(0 0 0 / 75%)">
-            Hi Meg, here&apos;s the invoice for the complete payment of the website and brand design. The added $100 covers any additional
-            cost for reviews and value tax. You can go ahead and wire the transfer and let me know if there are any issues. Thank you.
-          </Text>
-
-          <chakra.div>
             <Button
-              colorScheme="primary"
-              rounded="24px"
-              variant="ghost"
-              leftIcon={<Icon as={FiLink2} />}
-              bgColor="primary.50"
+              minW="0"
+              px={0}
+              variant="link"
               fontSize="sm"
-              border="1px solid transparent"
-              _hover={{ borderColor: "primary.600" }}
+              color="primary.400"
+              _hover={{ textDecoration: "none", color: "primary.500" }}
             >
               Copy Group link
             </Button>
-          </chakra.div>
+          </Stack>
+        </chakra.div>
+
+        {isMember ? (
+          <Button
+            size="sm"
+            fontSize="sm"
+            rounded="24px"
+            variant="ghost"
+            bgColor="primary.50"
+            colorScheme="primary"
+            border="1px solid transparent"
+            leftIcon={<Icon as={RiEditLine} />}
+            _hover={{ borderColor: "primary.600" }}
+          >
+            Edit Group
+          </Button>
+        ) : (
+          <Button colorScheme="primary" rounded="24px" leftIcon={<Icon as={RiUserAddLine} />} fontSize="sm">
+            Join group
+          </Button>
+        )}
+      </Stack>
+
+      <chakra.section py={6}>
+        <Stack>
+          <Text py={4} borderBottom="1px dashed rgb(0 0 0 / 15%)">
+            Subscriptions
+          </Text>
+
+          <Stack spacing={6} py={2}>
+            {group.services.map((service) => (
+              <Stack key={service.id} direction="row" alignItems="center" justifyContent="space-between">
+                <Stack>
+                  <Text textTransform="capitalize">{service.name}</Text>
+                  <Text fontSize="sm" color="rgb(0 0 0 / 70%)">
+                    0/{service.numberOfPeople} spaces left
+                  </Text>
+                </Stack>
+
+                <CredentialModal>
+                  <Button
+                    size="sm"
+                    aria-label="View password"
+                    rounded="full"
+                    variant="outline"
+                    leftIcon={<FiEye />}
+                    _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
+                  >
+                    View instructions
+                  </Button>
+                </CredentialModal>
+              </Stack>
+            ))}
+          </Stack>
+
+          {!!group.notes.length && (
+            <Stack py={4} spacing={4} borderTop="1px dashed rgb(0 0 0 / 15%)">
+              <Text>Note</Text>
+
+              <Text width="75%" fontSize="sm" fontWeight="400" color="rgb(0 0 0 / 75%)">
+                {group.notes}
+              </Text>
+            </Stack>
+          )}
+        </Stack>
+
+        <Stack mt={4}>
+          <Text py={4} borderBottom="1px dashed rgb(0 0 0 / 15%)">
+            Members
+          </Text>
+
+          <Stack spacing={6} py={2}>
+            {group.members.map((member) => (
+              <Stack key={member.user.id} direction="row" alignItems="center" justifyContent="space-between">
+                <Stack spacing={0}>
+                  <Text textTransform="capitalize">{member.user.fullName}</Text>
+                  {member.isAdmin && (
+                    <Text fontSize="sm" color="rgb(0 0 0 / 70%)">
+                      Admin
+                    </Text>
+                  )}
+                </Stack>
+
+                {!member.isAdmin && isAdmin && (
+                  <Button
+                    size="sm"
+                    aria-label="View password"
+                    rounded="full"
+                    variant="outline"
+                    leftIcon={<IoPersonRemoveOutline />}
+                    _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
+                  >
+                    Remove Member
+                  </Button>
+                )}
+              </Stack>
+            ))}
+          </Stack>
         </Stack>
       </chakra.section>
     </Container>
   );
 };
+
+const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
+  if (!req.session.data) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.session.data.userId },
+    select: { fullName: true, email: true },
+  });
+
+  if (!user) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  const id = params?.id as string | undefined;
+  if (!id) {
+    return { notFound: true };
+  }
+
+  const group = await prisma.group.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      notes: true,
+      createdAt: true,
+      members: {
+        select: {
+          isAdmin: true,
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+        },
+      },
+      services: {
+        select: {
+          id: true,
+          name: true,
+          numberOfPeople: true,
+          instructions: true,
+        },
+      },
+    },
+  });
+
+  if (!group) {
+    return { notFound: true };
+  }
+
+  const member = group.members.find((member) => member.user.id);
+  const isMember = !!member;
+  const isAdmin = member?.isAdmin;
+
+  return {
+    props: {
+      isAdmin,
+      isMember,
+      group: JSON.parse(JSON.stringify(group)),
+
+      layoutProps: {
+        user: {
+          fullName: user.fullName,
+        },
+      },
+    },
+  };
+};
+export const getServerSideProps = withSessionSsr(getServerSidePropsFn);
 
 Page.Layout = AppLayout;
 export default Page;
