@@ -1,6 +1,8 @@
 import React from "react";
 import prisma from "libs/prisma";
+import Api from "libs/api";
 import AppLayout from "components/app.layout";
+import dayjs from "dayjs";
 import { GetServerSideProps } from "next";
 import { withSessionSsr } from "libs/session";
 import {
@@ -18,12 +20,13 @@ import {
   Stack,
   Text,
   useDisclosure,
+  useToast,
 } from "@chakra-ui/react";
 import { FiEye } from "react-icons/fi";
 import { IoMdCloseCircle } from "react-icons/io";
 import { IoCopyOutline, IoPersonRemoveOutline } from "react-icons/io5";
 import { RiUserAddLine, RiEditLine } from "react-icons/ri";
-import dayjs from "dayjs";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const CredentialModal = ({ children }: any) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
@@ -90,14 +93,20 @@ const CredentialModal = ({ children }: any) => {
 };
 
 type PageProps = {
-  isAdmin: boolean;
-  isMember: boolean;
+  user: {
+    id: string;
+    fullName: string;
+  };
   group: {
+    id: string;
     name: string;
     notes: string;
     createdAt: string;
     members: {
       isAdmin: boolean;
+      user: { id: string; fullName: string };
+    }[];
+    requests: {
       user: { id: string; fullName: string };
     }[];
     services: {
@@ -107,7 +116,51 @@ type PageProps = {
     }[];
   };
 };
-const Page = ({ group, isAdmin, isMember = false }: PageProps) => {
+
+const Page = ({ user, group: initialGroup }: PageProps) => {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: group } = useQuery(["group-data", initialGroup.id], (() => undefined) as any, {
+    initialData: initialGroup,
+    staleTime: Infinity,
+  });
+
+  const [isMember, isAdmin] = React.useMemo(() => {
+    const member = group.members.find((member) => member.user.id === user.id);
+    return [!!member, !!member?.isAdmin];
+  }, [group.members, user.id]);
+
+  const [isRequesting] = React.useMemo(() => {
+    const request = group.requests.find((request) => request.user.id === user.id);
+    return [!!request];
+  }, [group.requests, user.id]);
+
+  const joinGroup = useMutation(
+    async () => {
+      const { payload } = await Api().post("/group/join", { groupId: group.id });
+      return payload;
+    },
+    {
+      onSuccess: (payload) => {
+        queryClient.setQueryData(["group-data", group.id], {
+          ...group,
+          requests: payload.requests,
+        });
+      },
+      onError: (err: any) => {
+        console.error(err);
+        toast({
+          title: "Error joining group",
+          description: err.message,
+          status: "error",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+    }
+  );
+
   return (
     <Container maxW="container.lg" py={6}>
       <Stack direction="row" justifyContent="space-between">
@@ -147,8 +200,16 @@ const Page = ({ group, isAdmin, isMember = false }: PageProps) => {
             Edit Group
           </Button>
         ) : (
-          <Button colorScheme="primary" rounded="24px" leftIcon={<Icon as={RiUserAddLine} />} fontSize="sm">
-            Join group
+          <Button
+            fontSize="sm"
+            rounded="24px"
+            colorScheme="primary"
+            isDisabled={isRequesting}
+            isLoading={joinGroup.isLoading}
+            onClick={() => joinGroup.mutate()}
+            leftIcon={<Icon as={RiUserAddLine} />}
+          >
+            {isRequesting ? "Sent request" : "Join group"}
           </Button>
         )}
       </Stack>
@@ -176,6 +237,7 @@ const Page = ({ group, isAdmin, isMember = false }: PageProps) => {
                     rounded="full"
                     variant="outline"
                     leftIcon={<FiEye />}
+                    isDisabled={!isMember}
                     _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
                   >
                     View instructions
@@ -216,7 +278,7 @@ const Page = ({ group, isAdmin, isMember = false }: PageProps) => {
                 {!member.isAdmin && isAdmin && (
                   <Button
                     size="sm"
-                    aria-label="View password"
+                    aria-label="Remove member"
                     rounded="full"
                     variant="outline"
                     leftIcon={<IoPersonRemoveOutline />}
@@ -227,6 +289,26 @@ const Page = ({ group, isAdmin, isMember = false }: PageProps) => {
                 )}
               </Stack>
             ))}
+
+            {isAdmin &&
+              group.requests.map((request) => (
+                <Stack key={request.user.id} direction="row" alignItems="center" justifyContent="space-between">
+                  <Stack spacing={0}>
+                    <Text textTransform="capitalize">{request.user.fullName}</Text>
+                  </Stack>
+
+                  <Button
+                    size="sm"
+                    aria-label="Accept request"
+                    rounded="full"
+                    variant="outline"
+                    leftIcon={<IoPersonRemoveOutline />}
+                    _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
+                  >
+                    Accept Request
+                  </Button>
+                </Stack>
+              ))}
           </Stack>
         </Stack>
       </chakra.section>
@@ -246,7 +328,7 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
 
   const user = await prisma.user.findUnique({
     where: { id: req.session.data.userId },
-    select: { fullName: true, email: true },
+    select: { id: true, fullName: true, email: true },
   });
 
   if (!user) {
@@ -289,6 +371,16 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
           instructions: true,
         },
       },
+      requests: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -296,14 +388,17 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
     return { notFound: true };
   }
 
-  const member = group.members.find((member) => member.user.id);
-  const isMember = !!member;
-  const isAdmin = member?.isAdmin;
+  const member = group.members.find((member) => member.user.id === req.session.data?.userId);
+  const request = group.requests.find((request) => request.user.id === req.session.data?.userId);
+
+  // const isMember = !!member;
+  // const isAdmin = !!member?.isAdmin;
+
+  console.log(group);
 
   return {
     props: {
-      isAdmin,
-      isMember,
+      user,
       group: JSON.parse(JSON.stringify(group)),
 
       layoutProps: {

@@ -41,9 +41,46 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "Group not found" });
         }
 
-        //
+        console.log("%s sending request to join group - %j", LOG_TAG, {
+          group: group.id,
+          userId: session.userId,
+        });
 
-        return res.send("To be implemented");
+        const updatedGroup = await prisma.group.update({
+          where: { id: body.groupId },
+          data: {
+            requests: {
+              create: [
+                {
+                  user: {
+                    connect: {
+                      id: session.userId,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          select: {
+            requests: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        console.log("%s sent request to join group - %j", LOG_TAG, {
+          group: updatedGroup,
+          userId: session.userId,
+        });
+
+        return res.send({ requests: updatedGroup.requests });
       }
       default:
         console.warn("%s unauthorized method %s", LOG_TAG, method);

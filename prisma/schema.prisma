@@ -28,8 +28,8 @@ model Group {
   notes    String?
   services Service[]
 
-  members GroupMember[]
-  request GroupRequest[]
+  members  GroupMember[]
+  requests GroupRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
