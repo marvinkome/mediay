@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { withSession } from "libs/session";
 import prisma from "libs/prisma";
 
-const LOG_TAG = "[remove-group-member]";
+const LOG_TAG = "[leave-group]";
 
 const handle = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -23,12 +23,12 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.send({ redirect: true, url: "/" });
         }
 
-        if (!body.groupId || !body.userId) {
-          console.warn("%s No groupId or userId in body - %j", LOG_TAG, {
+        if (!body.groupId) {
+          console.warn("%s No group ID in body - %j", LOG_TAG, {
             body,
           });
 
-          return res.status(400).send({ error: "No groupId or userId in body" });
+          return res.status(400).send({ error: "No group ID in body" });
         }
 
         const group = await prisma.group.findUnique({ where: { id: body.groupId }, include: { members: true } });
@@ -41,31 +41,30 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "Group not found" });
         }
 
-        const adminMember = group.members.find((member) => member.userId === session.userId);
-        if (!adminMember || !adminMember.isAdmin) {
-          console.warn("%s user not permitted to remove members - %j", LOG_TAG, {
-            body,
-            group,
-            member: adminMember,
-          });
-
-          return res.status(400).send({ error: "You're not permitted to remove members" });
-        }
-
-        const removingUser = group.members.find((member) => member.userId === body.userId);
-        if (!removingUser) {
+        const member = group.members.find((member) => member.userId === session.userId);
+        if (!member) {
           console.warn("%s user not part of this group - %j", LOG_TAG, {
             body,
             group,
-            member: removingUser,
+            member,
           });
 
-          return res.status(400).send({ error: "User not part of this group" });
+          return res.status(400).send({ error: "You're not part of this group" });
         }
 
-        console.log("%s removing user from group - %j", LOG_TAG, {
+        if (member.isAdmin) {
+          console.warn("%s admin cannot leave the group - %j", LOG_TAG, {
+            body,
+            group,
+            member,
+          });
+
+          return res.status(400).send({ error: "Admin cannot leave the group" });
+        }
+
+        console.log("%s removing the user from group - %j", LOG_TAG, {
           group: group.id,
-          userId: body.userId,
+          userId: session.userId,
         });
 
         const updatedGroup = await prisma.group.update({
@@ -75,8 +74,8 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
               delete: [
                 {
                   userId_groupId: {
-                    userId: body.userId,
                     groupId: group.id,
+                    userId: session.userId,
                   },
                 },
               ],
@@ -97,7 +96,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           },
         });
 
-        console.log("%s sent request to join group - %j", LOG_TAG, {
+        console.log("%s removed user from group - %j", LOG_TAG, {
           group: updatedGroup,
           userId: session.userId,
         });

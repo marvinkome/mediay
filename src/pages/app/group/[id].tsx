@@ -25,7 +25,7 @@ import {
 } from "@chakra-ui/react";
 import { FiEye } from "react-icons/fi";
 import { IoMdCloseCircle } from "react-icons/io";
-import { IoCopyOutline, IoPersonRemoveOutline } from "react-icons/io5";
+import { IoCopyOutline, IoPersonRemoveOutline, IoExitOutline } from "react-icons/io5";
 import { RiUserAddLine, RiEditLine } from "react-icons/ri";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -163,6 +163,39 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
     }
   );
 
+  const leaveGroup = useMutation(
+    async () => {
+      const { payload } = await Api().post("/group/leave", { groupId: group.id });
+      return payload;
+    },
+    {
+      onSuccess: (payload) => {
+        queryClient.setQueryData(["group-data", group.id], {
+          ...group,
+          members: payload.members,
+        });
+
+        toast({
+          title: `You have left ${group.name}`,
+          description: `You can send an invite to rejoin this group`,
+          status: "success",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+      onError: (err: any) => {
+        console.error(err);
+        toast({
+          title: "Error leaving group",
+          description: err.message,
+          status: "error",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+    }
+  );
+
   const acceptInvite = useMutation(
     async ({ id }: { id: string; fullName: string }) => {
       const { payload } = await Api().post("/group/accept-invite", { userId: id, groupId: group.id });
@@ -283,6 +316,37 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
             >
               {isRequesting ? "Sent request" : "Join group"}
             </Button>
+          )}
+
+          {isMember && !isAdmin && (
+            <ConfirmButton
+              actionButton={{
+                size: "sm",
+                fontSize: "sm",
+                rounded: "24px",
+                variant: "ghost",
+                bgColor: "primary.50",
+                colorScheme: "primary",
+                "aria-label": "Leave group",
+                leftIcon: <IoExitOutline />,
+                _hover: { borderColor: "primary.600" },
+                children: "Leave group",
+              }}
+              confirmButton={{
+                px: 4,
+                fontSize: "sm",
+                children: "Leave group",
+                colorScheme: "primary",
+                onClick: () => leaveGroup.mutate(),
+                isLoading: leaveGroup.isLoading,
+              }}
+            >
+              <Stack spacing={2}>
+                <Heading fontSize="lg">Leave group</Heading>
+
+                <Text color="rgb(0 0 0 / 65%)">Are you sure you want to leave {group.name}?</Text>
+              </Stack>
+            </ConfirmButton>
           )}
         </chakra.div>
       </Stack>
