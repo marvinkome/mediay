@@ -79,7 +79,7 @@ const Auth = ({ children }: SignupProps) => {
       <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm" scrollBehavior="inside">
         <ModalOverlay />
 
-        <ModalContent my={8} rounded="20px" overflow="hidden" maxW="md">
+        <ModalContent my={8} mx={10} rounded="20px" overflow="hidden" maxW="md">
           <ModalHeader px={4} py={2}>
             <Stack direction="row" alignItems="center">
               <IconButton

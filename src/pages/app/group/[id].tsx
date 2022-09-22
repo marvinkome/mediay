@@ -3,6 +3,7 @@ import prisma from "libs/prisma";
 import Api from "libs/api";
 import AppLayout from "components/app.layout";
 import dayjs from "dayjs";
+import ConfirmButton from "components/confirm-button";
 import { GetServerSideProps } from "next";
 import { withSessionSsr } from "libs/session";
 import {
@@ -26,6 +27,7 @@ import { FiEye } from "react-icons/fi";
 import { IoMdCloseCircle } from "react-icons/io";
 import { IoCopyOutline, IoPersonRemoveOutline } from "react-icons/io5";
 import { RiUserAddLine, RiEditLine } from "react-icons/ri";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const CredentialModal = ({ children }: any) => {
@@ -161,6 +163,73 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
     }
   );
 
+  const acceptInvite = useMutation(
+    async ({ id }: { id: string; fullName: string }) => {
+      const { payload } = await Api().post("/group/accept-invite", { userId: id, groupId: group.id });
+      return payload;
+    },
+    {
+      onSuccess: (payload, { fullName }) => {
+        queryClient.setQueryData(["group-data", group.id], {
+          ...group,
+          requests: payload.requests,
+          members: payload.members,
+        });
+
+        toast({
+          title: "Request accepted",
+          description: `${fullName} is now part of the group`,
+          status: "success",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+      onError: (err: any) => {
+        console.error(err);
+        toast({
+          title: "Error accepting request",
+          description: err.message,
+          status: "error",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+    }
+  );
+
+  const removeMember = useMutation(
+    async ({ id }: { id: string; fullName: string }) => {
+      const { payload } = await Api().post("/group/remove-member", { userId: id, groupId: group.id });
+      return payload;
+    },
+    {
+      onSuccess: (payload, { fullName }) => {
+        queryClient.setQueryData(["group-data", group.id], {
+          ...group,
+          members: payload.members,
+        });
+
+        toast({
+          title: "User removed from group",
+          description: `${fullName} has been removed from the group`,
+          status: "success",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+      onError: (err: any) => {
+        console.error(err);
+        toast({
+          title: "Error removing member",
+          description: err.message,
+          status: "error",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+    }
+  );
+
   return (
     <Container maxW="container.lg" py={6}>
       <Stack direction="row" justifyContent="space-between">
@@ -185,33 +254,37 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
           </Stack>
         </chakra.div>
 
-        {isMember ? (
-          <Button
-            size="sm"
-            fontSize="sm"
-            rounded="24px"
-            variant="ghost"
-            bgColor="primary.50"
-            colorScheme="primary"
-            border="1px solid transparent"
-            leftIcon={<Icon as={RiEditLine} />}
-            _hover={{ borderColor: "primary.600" }}
-          >
-            Edit Group
-          </Button>
-        ) : (
-          <Button
-            fontSize="sm"
-            rounded="24px"
-            colorScheme="primary"
-            isDisabled={isRequesting}
-            isLoading={joinGroup.isLoading}
-            onClick={() => joinGroup.mutate()}
-            leftIcon={<Icon as={RiUserAddLine} />}
-          >
-            {isRequesting ? "Sent request" : "Join group"}
-          </Button>
-        )}
+        <chakra.div>
+          {isAdmin && (
+            <Button
+              size="sm"
+              fontSize="sm"
+              rounded="24px"
+              variant="ghost"
+              bgColor="primary.50"
+              colorScheme="primary"
+              border="1px solid transparent"
+              leftIcon={<Icon as={RiEditLine} />}
+              _hover={{ borderColor: "primary.600" }}
+            >
+              Edit Group
+            </Button>
+          )}
+
+          {!isMember && (
+            <Button
+              fontSize="sm"
+              rounded="24px"
+              colorScheme="primary"
+              isDisabled={isRequesting}
+              isLoading={joinGroup.isLoading}
+              onClick={() => joinGroup.mutate()}
+              leftIcon={<Icon as={RiUserAddLine} />}
+            >
+              {isRequesting ? "Sent request" : "Join group"}
+            </Button>
+          )}
+        </chakra.div>
       </Stack>
 
       <chakra.section py={6}>
@@ -263,7 +336,7 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
             Members
           </Text>
 
-          <Stack spacing={6} py={2}>
+          <Stack spacing={4} py={2}>
             {group.members.map((member) => (
               <Stack key={member.user.id} direction="row" alignItems="center" justifyContent="space-between">
                 <Stack spacing={0}>
@@ -276,16 +349,31 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
                 </Stack>
 
                 {!member.isAdmin && isAdmin && (
-                  <Button
-                    size="sm"
-                    aria-label="Remove member"
-                    rounded="full"
-                    variant="outline"
-                    leftIcon={<IoPersonRemoveOutline />}
-                    _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
+                  <ConfirmButton
+                    actionButton={{
+                      size: "sm",
+                      "aria-label": "Remove member",
+                      rounded: "full",
+                      variant: "outline",
+                      leftIcon: <IoPersonRemoveOutline />,
+                      _hover: { bgColor: "primary.50", borderColor: "primary.100" },
+                      children: "Remove Member",
+                    }}
+                    confirmButton={{
+                      px: 4,
+                      fontSize: "sm",
+                      children: "Remove Member",
+                      colorScheme: "primary",
+                      onClick: () => removeMember.mutate(member.user),
+                      isLoading: removeMember.isLoading,
+                    }}
                   >
-                    Remove Member
-                  </Button>
+                    <Stack spacing={2}>
+                      <Heading fontSize="lg">Remove member</Heading>
+
+                      <Text color="rgb(0 0 0 / 65%)">Are you sure you want to remove {member.user.fullName} from this group?</Text>
+                    </Stack>
+                  </ConfirmButton>
                 )}
               </Stack>
             ))}
@@ -302,7 +390,9 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
                     aria-label="Accept request"
                     rounded="full"
                     variant="outline"
-                    leftIcon={<IoPersonRemoveOutline />}
+                    leftIcon={<RiUserAddLine />}
+                    isLoading={acceptInvite.isLoading}
+                    onClick={() => acceptInvite.mutate(request.user)}
                     _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
                   >
                     Accept Request
@@ -394,7 +484,7 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
   // const isMember = !!member;
   // const isAdmin = !!member?.isAdmin;
 
-  console.log(group);
+  // console.log(group);
 
   return {
     props: {
