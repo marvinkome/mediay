@@ -17,6 +17,7 @@ model User {
   fullName   String?
   groups     GroupMember[]
   requests   GroupRequest[]
+  services   ServiceUser[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -58,14 +59,25 @@ model GroupRequest {
 }
 
 model Service {
-  id             String  @id @default(cuid())
+  id             String        @id @default(cuid())
   name           String
   cost           Float
   numberOfPeople Int
   instructions   String
-  Group          Group?  @relation(fields: [groupId], references: [id])
+  group          Group?        @relation(fields: [groupId], references: [id])
   groupId        String?
+  users          ServiceUser[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ServiceUser {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId String
+
+  @@id([userId, serviceId])
 }

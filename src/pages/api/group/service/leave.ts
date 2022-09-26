@@ -1,8 +1,9 @@
+import { decryptData } from "libs/encrypt";
 import { NextApiRequest, NextApiResponse } from "next";
 import { withSession } from "libs/session";
 import prisma from "libs/prisma";
 
-const LOG_TAG = "[leave-group]";
+const LOG_TAG = "[leave-group-service]";
 
 const handle = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -23,15 +24,15 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.send({ redirect: true, url: "/" });
         }
 
-        if (!body.groupId) {
-          console.warn("%s No group ID in body - %j", LOG_TAG, {
+        if (!body.groupId || !body.serviceId) {
+          console.warn("%s No groupId or serviceId in body - %j", LOG_TAG, {
             body,
           });
 
-          return res.status(400).send({ error: "No group ID in body" });
+          return res.status(400).send({ error: "No groupId or serviceId in body" });
         }
 
-        const group = await prisma.group.findUnique({ where: { id: body.groupId }, include: { members: true } });
+        const group = await prisma.group.findUnique({ where: { id: body.groupId }, include: { members: true, services: true } });
         if (!group) {
           console.warn("%s group not found - %j", LOG_TAG, {
             body,
@@ -52,29 +53,48 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "You're not part of this group" });
         }
 
-        if (member.isAdmin) {
-          console.warn("%s admin cannot leave the group - %j", LOG_TAG, {
+        console.log("%s leave group service - %j", LOG_TAG, {
+          group: group.id,
+          service: body.serviceId,
+          userId: session.userId,
+        });
+
+        const service = group.services.find((service) => service.id === body.serviceId);
+        if (!service) {
+          console.warn("%s service not found in this group - %j", LOG_TAG, {
             body,
             group,
             member,
           });
 
-          return res.status(400).send({ error: "Admin cannot leave the group" });
+          return res.status(400).send({ error: "Service not found in this group" });
         }
 
-        console.log("%s removing the user from group - %j", LOG_TAG, {
-          group: group.id,
-          userId: session.userId,
+        const serviceUser = await prisma.serviceUser.findFirst({
+          where: {
+            serviceId: service.id,
+            userId: session.userId,
+          },
         });
+        if (!serviceUser) {
+          console.warn("%s User not using this service - %j", LOG_TAG, {
+            body,
+            group,
+            member,
+            service,
+          });
 
-        const updatedGroup = await prisma.group.update({
-          where: { id: body.groupId },
+          return res.status(400).send({ error: "You don't use this service" });
+        }
+
+        const updatedService = await prisma.service.update({
+          where: { id: body.serviceId },
           data: {
-            members: {
+            users: {
               delete: [
                 {
-                  userId_groupId: {
-                    groupId: group.id,
+                  userId_serviceId: {
+                    serviceId: service.id,
                     userId: session.userId,
                   },
                 },
@@ -82,35 +102,27 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
             },
           },
           select: {
-            members: {
+            id: true,
+            name: true,
+            numberOfPeople: true,
+            instructions: true,
+            users: {
               select: {
-                isAdmin: true,
-                user: {
-                  select: {
-                    id: true,
-                    fullName: true,
-                  },
-                },
-              },
-            },
-
-            services: {
-              select: {
-                id: true,
-                name: true,
-                numberOfPeople: true,
-                instructions: true,
+                userId: true,
               },
             },
           },
         });
 
-        console.log("%s removed user from group - %j", LOG_TAG, {
-          group: updatedGroup,
+        console.log("%s left service - %j", LOG_TAG, {
+          group: group,
+          service: service,
           userId: session.userId,
         });
 
-        return res.send({ services: updatedGroup.services, members: updatedGroup.members });
+        return res.send({
+          service: updatedService,
+        });
       }
       default:
         console.warn("%s unauthorized method %s", LOG_TAG, method);

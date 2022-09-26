@@ -52,7 +52,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         // encrypt service instructions
-        const services = (body.services || []).map((service: any) => {
+        const servicesPayload = (body.services || []).map((service: any) => {
           const encryptedInstructions = encryptData(service.instructions);
           return {
             ...service,
@@ -62,7 +62,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
 
         console.log("%s creating group - %j", LOG_TAG, {
           group: { name: body.name, notes: body.notes },
-          services,
+          servicesPayload,
         });
 
         const group = await prisma.group.create({
@@ -72,7 +72,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
 
             services: {
               createMany: {
-                data: services,
+                data: servicesPayload,
               },
             },
 
@@ -89,10 +89,22 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
               ],
             },
           },
+          include: {
+            services: true,
+          },
         });
 
         console.log("%s created group - %j", LOG_TAG, { group });
-        return res.send(group);
+
+        // add admin as a user for all services
+        await prisma.serviceUser.createMany({
+          data: group.services.map((service) => ({
+            serviceId: service.id,
+            userId: session.userId,
+          })),
+        });
+
+        return res.send({ group });
       }
       default:
         console.warn("%s unauthorized method %s", LOG_TAG, method);

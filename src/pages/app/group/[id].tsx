@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import ConfirmButton from "components/confirm-button";
 import { GetServerSideProps } from "next";
 import { withSessionSsr } from "libs/session";
+import { decryptData } from "libs/encrypt";
 import {
   Button,
   chakra,
@@ -25,12 +26,18 @@ import {
 } from "@chakra-ui/react";
 import { FiEye } from "react-icons/fi";
 import { IoMdCloseCircle } from "react-icons/io";
-import { IoCopyOutline, IoPersonRemoveOutline, IoExitOutline } from "react-icons/io5";
+import { IoCopyOutline, IoPersonRemoveOutline, IoExitOutline, IoAdd } from "react-icons/io5";
 import { RiUserAddLine, RiEditLine } from "react-icons/ri";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const CredentialModal = ({ children }: any) => {
+type InstructionsModalProps = {
+  children: React.ReactElement;
+  serviceId: string;
+  instructions: string;
+  leaveServiceMutation: any;
+};
+const InstructionsModal = ({ children, instructions, ...props }: InstructionsModalProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
 
   return (
@@ -43,7 +50,7 @@ const CredentialModal = ({ children }: any) => {
         <ModalOverlay />
 
         <ModalContent my={8} rounded="20px">
-          <ModalHeader pb={2}>
+          <ModalHeader pb={3}>
             <Stack direction="row" alignItems="center" spacing={3}>
               <IconButton
                 aria-label="close-modal"
@@ -63,29 +70,26 @@ const CredentialModal = ({ children }: any) => {
           </ModalHeader>
 
           <ModalBody px={6} py={0} pb={4}>
-            <Stack spacing={3}>
-              <Text fontSize="sm">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Saepe, architecto! Ullam placeat itaque inventore ducimus.
-                Accusamus vitae quis corrupti accusantium eligendi eum, nesciunt nihil, tempora maxime mollitia distinctio laborum qui.
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam sed nam reprehenderit repudiandae corporis laborum numquam
-                error, ipsum quas laboriosam et facilis nihil, quis corrupti dicta temporibus veritatis sit perspiciatis.
-              </Text>
+            <Stack spacing={4}>
+              <Text fontSize="sm">{instructions}</Text>
 
-              <chakra.div>
+              <Stack direction="row" justifyContent="flex-end">
                 <Button
                   colorScheme="primary"
                   rounded="24px"
                   variant="ghost"
-                  leftIcon={<Icon as={IoCopyOutline} />}
+                  leftIcon={<Icon as={IoExitOutline} />}
                   bgColor="primary.50"
                   fontSize="sm"
                   size="sm"
                   border="1px solid transparent"
                   _hover={{ borderColor: "primary.600" }}
+                  onClick={() => props.leaveServiceMutation.mutate(props.serviceId)}
+                  isLoading={props.leaveServiceMutation.isLoading}
                 >
-                  Copy Instructions
+                  Leave service
                 </Button>
-              </chakra.div>
+              </Stack>
             </Stack>
           </ModalBody>
         </ModalContent>
@@ -114,11 +118,14 @@ type PageProps = {
     services: {
       id: string;
       name: string;
+      instructions: string;
       numberOfPeople: number;
+      users: {
+        userId: string;
+      }[];
     }[];
   };
 };
-
 const Page = ({ user, group: initialGroup }: PageProps) => {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -138,6 +145,7 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
     return [!!request];
   }, [group.requests, user.id]);
 
+  // Mutation
   const joinGroup = useMutation(
     async () => {
       const { payload } = await Api().post("/group/join", { groupId: group.id });
@@ -163,6 +171,34 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
     }
   );
 
+  const joinService = useMutation(
+    async (serviceId: string) => {
+      const { payload } = await Api().post("/group/service/join", { groupId: group.id, serviceId });
+      return payload;
+    },
+    {
+      onSuccess: (payload) => {
+        queryClient.setQueryData(["group-data", group.id], {
+          ...group,
+          services: group.services.map((service) => {
+            if (service.id !== payload.service.id) return service;
+            return payload.service;
+          }),
+        });
+      },
+      onError: (err: any) => {
+        console.error(err);
+        toast({
+          title: "Error joining service",
+          description: err.message,
+          status: "error",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+    }
+  );
+
   const leaveGroup = useMutation(
     async () => {
       const { payload } = await Api().post("/group/leave", { groupId: group.id });
@@ -172,6 +208,8 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
       onSuccess: (payload) => {
         queryClient.setQueryData(["group-data", group.id], {
           ...group,
+          // update the services to remove the decrypted instructions
+          services: payload.services,
           members: payload.members,
         });
 
@@ -187,6 +225,34 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
         console.error(err);
         toast({
           title: "Error leaving group",
+          description: err.message,
+          status: "error",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+    }
+  );
+
+  const leaveService = useMutation(
+    async (serviceId: string) => {
+      const { payload } = await Api().post("/group/service/leave", { groupId: group.id, serviceId });
+      return payload;
+    },
+    {
+      onSuccess: (payload) => {
+        queryClient.setQueryData(["group-data", group.id], {
+          ...group,
+          services: group.services.map((service) => {
+            if (service.id !== payload.service.id) return service;
+            return payload.service;
+          }),
+        });
+      },
+      onError: (err: any) => {
+        console.error(err);
+        toast({
+          title: "Error leaving service",
           description: err.message,
           status: "error",
           position: "top-right",
@@ -352,36 +418,57 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
       </Stack>
 
       <chakra.section py={6}>
+        {/* services */}
         <Stack>
           <Text py={4} borderBottom="1px dashed rgb(0 0 0 / 15%)">
             Subscriptions
           </Text>
 
           <Stack spacing={6} py={2}>
-            {group.services.map((service) => (
-              <Stack key={service.id} direction="row" alignItems="center" justifyContent="space-between">
-                <Stack>
-                  <Text textTransform="capitalize">{service.name}</Text>
-                  <Text fontSize="sm" color="rgb(0 0 0 / 70%)">
-                    0/{service.numberOfPeople} spaces left
-                  </Text>
-                </Stack>
+            {group.services.map((service) => {
+              const isServiceUser = !!service.users.find(({ userId }) => userId === user.id);
 
-                <CredentialModal>
-                  <Button
-                    size="sm"
-                    aria-label="View password"
-                    rounded="full"
-                    variant="outline"
-                    leftIcon={<FiEye />}
-                    isDisabled={!isMember}
-                    _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
-                  >
-                    View instructions
-                  </Button>
-                </CredentialModal>
-              </Stack>
-            ))}
+              return (
+                <Stack key={service.id} direction="row" alignItems="center" justifyContent="space-between">
+                  <Stack spacing={0}>
+                    <Text textTransform="capitalize">{service.name}</Text>
+                    <Text fontSize="sm" color="rgb(0 0 0 / 70%)">
+                      {service.users.length}/{service.numberOfPeople} spaces available
+                    </Text>
+                  </Stack>
+
+                  {isServiceUser ? (
+                    <InstructionsModal serviceId={service.id} instructions={service.instructions} leaveServiceMutation={leaveService}>
+                      <Button
+                        size="sm"
+                        aria-label="View instructions"
+                        rounded="full"
+                        variant="outline"
+                        leftIcon={<FiEye />}
+                        isDisabled={!isMember}
+                        _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
+                      >
+                        View instructions
+                      </Button>
+                    </InstructionsModal>
+                  ) : (
+                    <Button
+                      size="sm"
+                      aria-label="Join service"
+                      rounded="full"
+                      variant="outline"
+                      leftIcon={<IoAdd />}
+                      isDisabled={!isMember}
+                      isLoading={joinService.isLoading}
+                      onClick={() => joinService.mutate(service.id)}
+                      _hover={{ bgColor: "primary.50", borderColor: "primary.100" }}
+                    >
+                      Join service
+                    </Button>
+                  )}
+                </Stack>
+              );
+            })}
           </Stack>
 
           {!!group.notes.length && (
@@ -395,6 +482,7 @@ const Page = ({ user, group: initialGroup }: PageProps) => {
           )}
         </Stack>
 
+        {/* members */}
         <Stack mt={4}>
           <Text py={4} borderBottom="1px dashed rgb(0 0 0 / 15%)">
             Members
@@ -499,7 +587,7 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
     return { notFound: true };
   }
 
-  const group = await prisma.group.findUnique({
+  let group = await prisma.group.findUnique({
     where: { id },
     select: {
       id: true,
@@ -523,6 +611,11 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
           name: true,
           numberOfPeople: true,
           instructions: true,
+          users: {
+            select: {
+              userId: true,
+            },
+          },
         },
       },
       requests: {
@@ -543,17 +636,25 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
   }
 
   const member = group.members.find((member) => member.user.id === req.session.data?.userId);
-  const request = group.requests.find((request) => request.user.id === req.session.data?.userId);
+  const isMember = !!member;
 
-  // const isMember = !!member;
-  // const isAdmin = !!member?.isAdmin;
-
-  // console.log(group);
+  // decrypt services
+  const services = group.services.map((service) => {
+    return {
+      ...service,
+      instructions: isMember ? decryptData(service.instructions) : service.instructions,
+    };
+  });
 
   return {
     props: {
       user,
-      group: JSON.parse(JSON.stringify(group)),
+      group: JSON.parse(
+        JSON.stringify({
+          ...group,
+          services,
+        })
+      ),
 
       layoutProps: {
         user: {
