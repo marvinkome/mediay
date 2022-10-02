@@ -31,7 +31,18 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "No group ID in body" });
         }
 
-        const group = await prisma.group.findUnique({ where: { id: body.groupId }, include: { members: true } });
+        const group = await prisma.group.findUnique({
+          where: { id: body.groupId },
+          select: {
+            id: true,
+            members: true,
+            services: {
+              include: {
+                users: true,
+              },
+            },
+          },
+        });
         if (!group) {
           console.warn("%s group not found - %j", LOG_TAG, {
             body,
@@ -62,6 +73,30 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "Admin cannot leave the group" });
         }
 
+        // remove user from services
+        const userServices = group.services.filter((service) => service.users.find((user) => user.userId === session.userId));
+
+        console.log("%s removing user from all services - %j", LOG_TAG, {
+          group,
+          userId: session.userId,
+          services: userServices,
+        });
+
+        await prisma.serviceUser.deleteMany({
+          where: {
+            userId: session.userId,
+            serviceId: {
+              in: userServices.map((s) => s.id),
+            },
+          },
+        });
+
+        console.log("%s removed user from all services - %j", LOG_TAG, {
+          group,
+          userId: session.userId,
+          services: userServices,
+        });
+
         console.log("%s removing the user from group - %j", LOG_TAG, {
           group: group.id,
           userId: session.userId,
@@ -81,6 +116,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
               ],
             },
           },
+
           select: {
             members: {
               select: {
@@ -100,6 +136,11 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
                 name: true,
                 numberOfPeople: true,
                 instructions: true,
+                users: {
+                  select: {
+                    userId: true,
+                  },
+                },
               },
             },
           },
