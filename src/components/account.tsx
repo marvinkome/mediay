@@ -14,15 +14,17 @@ import {
   ModalHeader,
   ModalOverlay,
   Stack,
+  Text,
   useBreakpointValue,
   useDisclosure,
 } from "@chakra-ui/react";
 import { IoClose } from "react-icons/io5";
+import { RiCheckLine } from "react-icons/ri";
 
-type CreateGroupProps = {
+type AccountProps = {
   children: React.ReactElement;
 };
-const CreateGroup = ({ children }: CreateGroupProps) => {
+const Account = ({ children }: AccountProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
 
   return (
@@ -44,7 +46,7 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
           <ModalHeader px={0} pt={4}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Heading fontSize="lg" fontWeight="600">
-                New Group
+                Profile
               </Heading>
 
               <IconButton
@@ -60,18 +62,26 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
           </ModalHeader>
 
           <ModalBody px={0} pt={0} pb={4}>
-            <Stack w="full" spacing={4} justifyContent="space-between">
+            <Stack w="full" spacing={4}>
               <FormControl>
                 <FormLabel mb={1} fontSize="xs" fontWeight="600" textTransform="uppercase" opacity={0.48}>
-                  Group Name
+                  Name
                 </FormLabel>
 
-                <Input rounded="4px" type="text" placeholder="ex: Streaming buddies" />
+                <Input rounded="4px" type="text" placeholder="John Doe" />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel mb={1} fontSize="xs" fontWeight="600" textTransform="uppercase" opacity={0.48}>
+                  Email
+                </FormLabel>
+
+                <Input rounded="4px" type="email" placeholder="John Doe" />
               </FormControl>
 
               <chakra.div pt={6} textAlign="right">
-                <Button colorScheme="primary" fontSize="sm">
-                  Create Group
+                <Button colorScheme="primary" fontSize="sm" leftIcon={<Icon as={RiCheckLine} />}>
+                  Update profile
                 </Button>
               </chakra.div>
             </Stack>
@@ -82,4 +92,4 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
   );
 };
 
-export default CreateGroup;
+export default Account;

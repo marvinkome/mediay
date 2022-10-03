@@ -9,6 +9,7 @@ import {
   Heading,
   Icon,
   IconButton,
+  Image,
   Input,
   Modal,
   ModalBody,
@@ -25,6 +26,7 @@ import { FcGoogle } from "react-icons/fc";
 import { useOAuth } from "hooks/auth";
 import { useMutation } from "@tanstack/react-query";
 import supabase from "libs/supabase";
+import { IoClose } from "react-icons/io5";
 
 const MotionFormControl = motion(FormControl);
 
@@ -79,18 +81,19 @@ const Auth = ({ children }: SignupProps) => {
       <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm" scrollBehavior="inside">
         <ModalOverlay />
 
-        <ModalContent my={8} mx={10} rounded="20px" overflow="hidden" maxW="md">
-          <ModalHeader px={4} py={2}>
-            <Stack direction="row" alignItems="center">
+        <ModalContent my={8} mx={10} overflow="hidden" maxW="md">
+          <ModalHeader px={6} py={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Image src="/logo-gray.svg" alt="logo" boxSize="30px" />
+
               <IconButton
-                p={0}
                 size="sm"
+                variant="outline"
                 rounded="full"
                 onClick={() => onClose()}
-                bgColor="primary.50"
                 aria-label="close-modal"
-                _hover={{ bgColor: "primary.100" }}
-                icon={<Icon boxSize="24px" as={IoMdCloseCircle} />}
+                _hover={{ bgColor: "primary.50" }}
+                icon={<Icon boxSize="18px" as={IoClose} />}
               />
             </Stack>
           </ModalHeader>
@@ -98,19 +101,85 @@ const Auth = ({ children }: SignupProps) => {
           <ModalBody p={0}>
             <Container maxW="sm" py={0}>
               <Stack textAlign="center">
-                <Heading fontSize="xl">Log in or sign up in seconds</Heading>
-
-                <Text fontSize="sm" color="rgb(0 0 0 / 48%)">
-                  Use your email or another service to continue with Mediay
-                </Text>
+                <Heading fontSize="xl">Sign up or Log in to continue</Heading>
               </Stack>
 
-              <Stack my={8} spacing={4}>
+              <Stack my={8} spacing={2}>
+                <Stack as="form" spacing={4} onSubmit={onEmailSubmit}>
+                  {emailAuthMutation.isSuccess ? (
+                    <Text fontSize="sm">
+                      We&apos;ve sent an email to <chakra.span fontWeight="600">{email}</chakra.span>, it contains a link to continue.
+                    </Text>
+                  ) : (
+                    <>
+                      {!isSignup && (
+                        <MotionFormControl initial={{ y: 20 }} animate={{ y: 0 }} isRequired>
+                          <FormLabel
+                            mb={1}
+                            fontSize="xs"
+                            opacity={0.48}
+                            fontWeight="600"
+                            textTransform="uppercase"
+                            requiredIndicator={<span />}
+                          >
+                            Name
+                          </FormLabel>
+
+                          <Input
+                            type="text"
+                            name="name"
+                            fontSize="sm"
+                            placeholder="John Doe"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                          />
+                        </MotionFormControl>
+                      )}
+
+                      <FormControl isRequired>
+                        <FormLabel
+                          mb={1}
+                          fontSize="xs"
+                          opacity={0.48}
+                          fontWeight="600"
+                          textTransform="uppercase"
+                          requiredIndicator={<span />}
+                        >
+                          Email
+                        </FormLabel>
+
+                        <Input
+                          type="email"
+                          name="email"
+                          fontSize="sm"
+                          placeholder="johndoe@mail.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                        />
+                      </FormControl>
+
+                      <Button colorScheme="secondary" fontSize="sm" type="submit" py={3} isLoading={emailAuthMutation.isLoading}>
+                        Sign Up
+                      </Button>
+
+                      {emailAuthMutation.isError && (emailAuthMutation.error as any)?.message !== "no-account" && (
+                        <Text color="red.600" fontSize="xs">
+                          Error authenticating with Email. Please try again or use a different option
+                        </Text>
+                      )}
+                    </>
+                  )}
+                </Stack>
+
+                <Text textAlign="center" fontSize="xs" color="rgb(0 0 0 / 58%)">
+                  OR
+                </Text>
+
                 <Stack>
                   <Button
                     variant="outline"
                     fontSize="sm"
-                    colorScheme="primary"
+                    colorScheme="secondary"
                     leftIcon={<Icon boxSize="20px" as={FcGoogle} />}
                     onClick={() => googleAuthMutation.mutate()}
                     isLoading={googleAuthMutation.isLoading}
@@ -122,62 +191,6 @@ const Auth = ({ children }: SignupProps) => {
                     <Text color="red.600" fontSize="xs">
                       Error authenticating with Google. Please try again or use a different option
                     </Text>
-                  )}
-                </Stack>
-
-                <Text textAlign="center" fontSize="xs" color="rgb(0 0 0 / 58%)">
-                  OR
-                </Text>
-
-                <Stack as="form" spacing={4} onSubmit={onEmailSubmit}>
-                  {emailAuthMutation.isSuccess ? (
-                    <Text fontSize="sm">
-                      We&apos;ve sent an email to <chakra.span fontWeight="600">{email}</chakra.span>, it contains a link to continue.
-                    </Text>
-                  ) : (
-                    <>
-                      {isSignup && (
-                        <MotionFormControl initial={{ y: 20 }} animate={{ y: 0 }} isRequired>
-                          <FormLabel mb={1} fontSize="xs" fontWeight="400" requiredIndicator={<span />}>
-                            Full name
-                          </FormLabel>
-
-                          <Input
-                            type="text"
-                            name="name"
-                            fontSize="sm"
-                            placeholder="Your full name"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                          />
-                        </MotionFormControl>
-                      )}
-
-                      <FormControl isRequired>
-                        <FormLabel mb={1} fontSize="xs" fontWeight="400" requiredIndicator={<span />}>
-                          Email address
-                        </FormLabel>
-
-                        <Input
-                          type="email"
-                          name="email"
-                          fontSize="sm"
-                          placeholder="Your email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-                      </FormControl>
-
-                      <Button colorScheme="primary" fontSize="sm" type="submit" isLoading={emailAuthMutation.isLoading}>
-                        Continue with Email
-                      </Button>
-
-                      {emailAuthMutation.isError && (emailAuthMutation.error as any)?.message !== "no-account" && (
-                        <Text color="red.600" fontSize="xs">
-                          Error authenticating with Email. Please try again or use a different option
-                        </Text>
-                      )}
-                    </>
                   )}
                 </Stack>
 
