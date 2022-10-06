@@ -1,4 +1,5 @@
 import React from "react";
+import Api from "libs/api";
 import {
   Button,
   chakra,
@@ -24,7 +25,7 @@ import { FiMoreVertical, FiPlus } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "react-use";
 import CreateGroup from "./create";
-import Api from "libs/api";
+import EditGroup from "./edit";
 
 type ListProps = {
   groups: {
@@ -146,9 +147,13 @@ const GroupList = ({ groups: initialGroups }: ListProps) => {
                   <MenuItem fontSize="sm" _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }} _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}>
                     Copy Invite Link
                   </MenuItem>
-                  <MenuItem fontSize="sm" _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }} _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}>
-                    Edit Group
-                  </MenuItem>
+
+                  <EditGroup group={group}>
+                    <MenuItem fontSize="sm" _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }} _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}>
+                      Edit Group
+                    </MenuItem>
+                  </EditGroup>
+
                   <MenuItem fontSize="sm" _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }} _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}>
                     Delete Group
                   </MenuItem>
