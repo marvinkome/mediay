@@ -1,5 +1,6 @@
 import { ChakraProvider } from "@chakra-ui/react";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import Head from "next/head";
 import theme from "theme";
 
@@ -7,7 +8,8 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 240 * 1000,
+      staleTime: 10 * 60 * 1000, // 10 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
       retry: 1,
     },
   },
@@ -29,6 +31,8 @@ function App({ Component, pageProps }: any) {
         <Layout {...layoutProps}>
           <Component {...pageProps} />
         </Layout>
+
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ChakraProvider>
   );

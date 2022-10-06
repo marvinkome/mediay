@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "libs/prisma";
-import { decryptData } from "libs/encrypt";
 import { withSession } from "libs/session";
 
 const LOG_TAG = "[get-groups]";
@@ -10,6 +9,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
     const {
       method,
       session: { data: session },
+      query,
     } = req;
 
     switch (method) {
@@ -23,7 +23,34 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.send({ redirect: true, url: "/" });
         }
 
-        return res.send("To be implemented");
+        const search = query.search as string | undefined;
+
+        console.log("%s fetching groups - %j", LOG_TAG, {
+          search,
+        });
+
+        const groups = await prisma.group.findMany({
+          take: 10,
+          where: {
+            ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+            members: {
+              some: {
+                userId: session.userId,
+              },
+            },
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        });
+
+        console.log("%s groups found - %j", LOG_TAG, {
+          search,
+          groups,
+        });
+
+        return res.send({ groups });
       }
       default:
         console.warn("%s unauthorized method %s", LOG_TAG, method);

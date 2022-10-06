@@ -14,18 +14,27 @@ import {
   ModalHeader,
   ModalOverlay,
   Stack,
-  Text,
   useBreakpointValue,
   useDisclosure,
+  useToast,
 } from "@chakra-ui/react";
 import { IoClose } from "react-icons/io5";
-import { RiCheckLine } from "react-icons/ri";
 
 type AccountProps = {
   children: React.ReactElement;
+  user: { fullName: string; email: string };
 };
-const Account = ({ children }: AccountProps) => {
+const Account = ({ children, user }: AccountProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
+
+  const [formValue, setFormValue] = React.useState({
+    fullName: user?.fullName || "",
+    email: user?.email || "",
+  });
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+  };
 
   return (
     <>
@@ -62,13 +71,19 @@ const Account = ({ children }: AccountProps) => {
           </ModalHeader>
 
           <ModalBody px={0} pt={0} pb={4}>
-            <Stack w="full" spacing={4}>
+            <Stack as="form" onSubmit={onSubmit} w="full" spacing={4}>
               <FormControl>
                 <FormLabel mb={1} fontSize="xs" fontWeight="600" textTransform="uppercase" opacity={0.48}>
                   Name
                 </FormLabel>
 
-                <Input rounded="4px" type="text" placeholder="John Doe" />
+                <Input
+                  rounded="4px"
+                  type="text"
+                  placeholder="John Doe"
+                  value={formValue.fullName}
+                  onChange={(e) => setFormValue({ ...formValue, fullName: e.target.value })}
+                />
               </FormControl>
 
               <FormControl>
@@ -76,11 +91,17 @@ const Account = ({ children }: AccountProps) => {
                   Email
                 </FormLabel>
 
-                <Input rounded="4px" type="email" placeholder="John Doe" />
+                <Input
+                  rounded="4px"
+                  type="email"
+                  placeholder="John Doe"
+                  value={formValue.email}
+                  onChange={(e) => setFormValue({ ...formValue, email: e.target.value })}
+                />
               </FormControl>
 
               <chakra.div pt={6} textAlign="right">
-                <Button colorScheme="primary" fontSize="sm" leftIcon={<Icon as={RiCheckLine} />}>
+                <Button type="submit" colorScheme="primary" fontSize="sm">
                   Update profile
                 </Button>
               </chakra.div>

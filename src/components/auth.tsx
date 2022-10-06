@@ -112,7 +112,7 @@ const Auth = ({ children }: SignupProps) => {
                     </Text>
                   ) : (
                     <>
-                      {!isSignup && (
+                      {isSignup && (
                         <MotionFormControl initial={{ y: 20 }} animate={{ y: 0 }} isRequired>
                           <FormLabel
                             mb={1}

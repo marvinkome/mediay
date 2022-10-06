@@ -1,8 +1,10 @@
 import React from "react";
+import Api from "libs/api";
 import {
   Button,
   chakra,
   FormControl,
+  FormErrorMessage,
   FormLabel,
   Heading,
   Icon,
@@ -18,12 +20,44 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { IoClose } from "react-icons/io5";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 
 type CreateGroupProps = {
   children: React.ReactElement;
 };
 const CreateGroup = ({ children }: CreateGroupProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const [formData, setFormData] = React.useState({
+    name: "",
+  });
+
+  const createGroupMutation = useMutation(
+    async (data: any) => {
+      return Api().post("/groups/create", data);
+    },
+    {
+      onSuccess: async ({ payload }) => {
+        await queryClient.invalidateQueries(["groups"]);
+
+        router.push(`/app/groups/${payload.group.id}`);
+      },
+    }
+  );
+
+  const onSubmitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // submit form
+    await createGroupMutation.mutateAsync(formData);
+
+    // reset and close modal
+    setFormData({ name: "" });
+    onClose();
+  };
 
   return (
     <>
@@ -60,17 +94,25 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
           </ModalHeader>
 
           <ModalBody px={0} pt={0} pb={4}>
-            <Stack w="full" spacing={4} justifyContent="space-between">
-              <FormControl>
+            <Stack w="full" spacing={4} justifyContent="space-between" as="form" onSubmit={onSubmitForm}>
+              <FormControl isInvalid={createGroupMutation.isError}>
                 <FormLabel mb={1} fontSize="xs" fontWeight="600" textTransform="uppercase" opacity={0.48}>
                   Group Name
                 </FormLabel>
 
-                <Input rounded="4px" type="text" placeholder="ex: Streaming buddies" />
+                <Input
+                  rounded="4px"
+                  type="text"
+                  placeholder="ex: Streaming buddies"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+
+                <FormErrorMessage>{(createGroupMutation.error as any)?.message}</FormErrorMessage>
               </FormControl>
 
               <chakra.div pt={6} textAlign="right">
-                <Button colorScheme="primary" fontSize="sm">
+                <Button colorScheme="primary" fontSize="sm" type="submit" isLoading={createGroupMutation.isLoading}>
                   Create Group
                 </Button>
               </chakra.div>

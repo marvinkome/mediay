@@ -1,13 +1,19 @@
 import React from "react";
-import { Avatar, chakra, IconButton, Image, Icon, Stack, Container, Button } from "@chakra-ui/react";
+import { Avatar, chakra, Image, Icon, Stack, Container, Button } from "@chakra-ui/react";
 import { FiMoreHorizontal } from "react-icons/fi";
+import { useQuery } from "@tanstack/react-query";
 import Account from "components/account";
 
 type AppLayoutProps = {
   children: React.ReactElement;
-  user: { fullName?: string };
+  user: { fullName: string; email: string };
 };
 const Layout = ({ children, user }: AppLayoutProps) => {
+  useQuery<any>(["user-details"], async () => {}, {
+    initialData: user,
+    staleTime: Infinity,
+  });
+
   return (
     <chakra.div bgImage="url('/bg-1.png')" bgRepeat="no-repeat" bgSize="100% 50vh" minH="100vh">
       <chakra.header>
@@ -16,13 +22,13 @@ const Layout = ({ children, user }: AppLayoutProps) => {
             <Image src="/logo.svg" alt="logo" boxSize={10} />
           </Stack>
 
-          <Account>
+          <Account user={user}>
             <Button
               variant="ghost"
               colorScheme="whiteAlpha"
               aria-label="open account settings"
               rounded="full"
-              leftIcon={<Avatar name="Name" size="sm" src="https://bit.ly/prosper-baba" />}
+              leftIcon={<Avatar name={user.fullName} size="sm" />}
               rightIcon={<Icon boxSize={6} color="white" as={FiMoreHorizontal} />}
             />
           </Account>
