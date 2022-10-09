@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "libs/prisma";
 import { withSession } from "libs/session";
-import { encryptData } from "libs/encrypt";
 
 const LOG_TAG = "[remove-service]";
 

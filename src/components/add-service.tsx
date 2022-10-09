@@ -1,4 +1,5 @@
 import React from "react";
+import Api from "libs/api";
 import {
   Button,
   FormControl,
@@ -22,15 +23,16 @@ import {
 } from "@chakra-ui/react";
 import { IoClose } from "react-icons/io5";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import Api from "libs/api";
+import { useRouter } from "next/router";
 
 type AddServiceProps = {
-  groupId: string;
   children: React.ReactElement;
 };
-const AddService = ({ groupId, children }: AddServiceProps) => {
+const AddService = ({ children }: AddServiceProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
   const queryClient = useQueryClient();
+
+  const { query } = useRouter();
 
   const [formData, setFormData] = React.useState({
     name: "",
@@ -52,13 +54,11 @@ const AddService = ({ groupId, children }: AddServiceProps) => {
 
   const addServiceMutation = useMutation(
     async (data: any) => {
-      return Api().post("/service/add", data);
+      return Api().post(`/groups/${query.id}/services/add`, data);
     },
     {
-      onSuccess: ({ payload }) => {
-        queryClient.setQueryData(["group", groupId], (group: any) => {
-          return { ...group, services: group.services.concat(payload.service) };
-        });
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(["services", query.id]);
       },
     }
   );
@@ -74,10 +74,7 @@ const AddService = ({ groupId, children }: AddServiceProps) => {
     };
 
     // submit form
-    await addServiceMutation.mutateAsync({
-      ...data,
-      groupId,
-    });
+    await addServiceMutation.mutateAsync(data);
 
     // reset and close modal
     resetInput();
@@ -219,7 +216,7 @@ const AddService = ({ groupId, children }: AddServiceProps) => {
             </Stack>
 
             <Stack direction="row" alignItems="center" spacing={4}>
-              <Text flexGrow="1" fontSize="sm" color="red.500">
+              <Text flexGrow={1} fontSize="sm" color="red.500">
                 {(addServiceMutation.error as any)?.message}
               </Text>
 

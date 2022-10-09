@@ -2,7 +2,7 @@ import React from "react";
 import AppLayout from "components/app.layout";
 import NextLink from "next/link";
 import prisma from "libs/prisma";
-import CreateGroup from "components/groups/modals/create";
+import CreateGroup from "components/groups/create";
 import { GetServerSideProps } from "next";
 import { withSessionSsr } from "libs/session";
 import { Button, chakra, Container, Heading, LinkBox, LinkOverlay, SimpleGrid, Stack, Text } from "@chakra-ui/react";

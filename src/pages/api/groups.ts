@@ -30,7 +30,6 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         });
 
         const groups = await prisma.group.findMany({
-          take: 10,
           where: {
             ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
             members: {

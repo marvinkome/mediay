@@ -3,7 +3,7 @@ import prisma from "libs/prisma";
 import { withSession } from "libs/session";
 import { encryptData } from "libs/encrypt";
 
-const LOG_TAG = "[update-service]";
+const LOG_TAG = "[update-group-service]";
 
 const handle = async (req: NextApiRequest, res: NextApiResponse) => {
   try {

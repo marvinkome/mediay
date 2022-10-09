@@ -11,15 +11,15 @@ const bodySchema = joi.object({
   cost: joi.number().min(0).required(),
   numberOfPeople: joi.number().min(1).required(),
   instructions: joi.string().required(),
-  groupId: joi.string().required(),
 });
 
 const handle = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const {
       method,
-      body,
+      body: { instructions, ...body },
       session: { data: session },
+      query: { groupId },
     } = req;
 
     switch (method) {
@@ -33,8 +33,13 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.send({ redirect: true, url: "/" });
         }
 
+        if (!groupId) {
+          console.error("%s No group Id in query- %j", LOG_TAG, { groupId });
+          return res.send({ error: "Invalid request" });
+        }
+
         // validate body
-        const { error } = bodySchema.validate(body);
+        const { error } = bodySchema.validate({ instructions, ...body });
         if (error) {
           console.warn("%s Validation Error - %j", LOG_TAG, {
             error,
@@ -44,16 +49,14 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "Invalid payload, Please check your data" });
         }
 
-        // encrypt service instructions
-        let { groupId, ...payload } = body;
-        payload.instructions = encryptData(payload.instructions);
-
         const groupMember = await prisma.groupMember.findFirst({
-          where: { groupId, userId: session.userId },
+          where: { groupId: groupId as string, userId: session.userId },
         });
 
         if (!groupMember) {
           console.warn("%s User not a member of the group - %j", LOG_TAG, {
+            groupId,
+            userId: session.userId,
             body,
           });
 
@@ -62,12 +65,13 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
 
         console.log("%s creating service - %j", LOG_TAG, {
           groupId,
-          payload,
+          body,
         });
 
         const service = await prisma.service.create({
           data: {
-            ...payload,
+            ...body,
+            instructions: encryptData(instructions),
             group: {
               connect: {
                 id: groupId,

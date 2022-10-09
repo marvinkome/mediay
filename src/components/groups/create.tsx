@@ -37,7 +37,7 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
 
   const createGroupMutation = useMutation(
     async (data: any) => {
-      return Api().post("/group/create", data);
+      return Api().post("/groups/create", data);
     },
     {
       onSuccess: async ({ payload }) => {

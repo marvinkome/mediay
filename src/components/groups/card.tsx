@@ -32,7 +32,7 @@ import { RiSearchLine } from "react-icons/ri";
 import { FiMoreVertical } from "react-icons/fi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import AddService from "./modals/add-service";
+import AddService from "../add-service";
 import ServiceModal from "./modals/service";
 
 const Service = ({ service, user, groupId }: any) => {

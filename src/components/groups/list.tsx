@@ -27,7 +27,7 @@ import { RiSearchLine } from "react-icons/ri";
 import { FiMoreVertical, FiPlus } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "react-use";
-import CreateGroup from "./modals/create";
+import CreateGroup from "./create";
 import EditGroup from "./modals/edit";
 
 type ListProps = {

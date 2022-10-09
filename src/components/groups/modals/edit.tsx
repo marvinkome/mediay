@@ -37,7 +37,7 @@ const EditGroup = ({ children, group }: EditGroupProps) => {
 
   const editGroupMutation = useMutation(
     async (data: any) => {
-      return Api().post("/group/update", data);
+      return Api().post("/groups/update", data);
     },
     {
       onSuccess: async ({ payload }) => {

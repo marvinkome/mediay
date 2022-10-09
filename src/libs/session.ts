@@ -26,7 +26,7 @@ export const sessionOptions: IronSessionOptions = {
 
 export const withSession = (handler: NextApiHandler) => withIronSessionApiRoute(handler, sessionOptions);
 
-export function withSessionSsr<P extends { [key: string]: unknown } = { [key: string]: unknown }>(
+export function withSessionSsr<P extends { [key: string]: any } = { [key: string]: any }>(
   handler: (context: GetServerSidePropsContext) => GetServerSidePropsResult<P> | Promise<GetServerSidePropsResult<P>>
 ) {
   return withIronSessionSsr(handler, sessionOptions);
