@@ -2,7 +2,7 @@ import React from "react";
 import NextLink from "next/link";
 import { Button, chakra, Container, Heading, Stack, Text } from "@chakra-ui/react";
 import { FiPlus } from "react-icons/fi";
-import CreateGroup from "components/groups/create";
+import CreateGroup from "components/groups/modals/create";
 
 type AppLayoutProps = {
   children: React.ReactElement;

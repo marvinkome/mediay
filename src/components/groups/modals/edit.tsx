@@ -40,7 +40,10 @@ const EditGroup = ({ children, group }: EditGroupProps) => {
       return Api().post("/group/update", data);
     },
     {
-      onSuccess: async () => {
+      onSuccess: async ({ payload }) => {
+        queryClient.setQueryData(["group", payload.group.id], (group: any) => {
+          return { ...group, name: payload.group.name };
+        });
         await queryClient.invalidateQueries(["groups"]);
       },
     }
@@ -55,8 +58,7 @@ const EditGroup = ({ children, group }: EditGroupProps) => {
       ...formData,
     });
 
-    // reset and close modal
-    setFormData({ name: "" });
+    // close modal
     onClose();
   };
 

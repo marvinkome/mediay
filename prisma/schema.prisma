@@ -79,5 +79,7 @@ model ServiceUser {
   service   Service @relation(fields: [serviceId], references: [id])
   serviceId String
 
+  isCreator Boolean
+
   @@id([userId, serviceId])
 }

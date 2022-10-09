@@ -28,27 +28,18 @@ const ConfirmButton = ({ children, ...props }: ConfirmButtonProps) => {
 
       <Modal isCentered isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent my={8} mx={10} rounded="20px" py={4}>
+        <ModalContent my={8} mx={10} rounded="4px" py={4}>
           <ModalCloseButton />
           <ModalBody py={0} my={0}>
             {children}
           </ModalBody>
 
           <ModalFooter py={0} mt={4}>
-            <Button
-              mr={3}
-              px={6}
-              variant="ghost"
-              colorScheme="primary"
-              fontSize="sm"
-              rounded="24px"
-              onClick={onClose}
-              {...props.cancelButton}
-            >
+            <Button mr={3} variant="ghost" colorScheme="gray" fontSize="sm" onClick={onClose} {...props.cancelButton}>
               Cancel
             </Button>
 
-            <Button px={6} colorScheme="primary" fontSize="sm" rounded="24px" {...props.confirmButton} />
+            <Button colorScheme="primary" fontSize="sm" {...props.confirmButton} />
           </ModalFooter>
         </ModalContent>
       </Modal>

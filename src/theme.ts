@@ -40,6 +40,7 @@ const theme = extendTheme({
       sizes: {
         md: {
           py: 2,
+          fontSize: "sm",
         },
       },
     },

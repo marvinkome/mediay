@@ -1,5 +1,6 @@
 import React from "react";
 import Api from "libs/api";
+import NextLink from "next/link";
 import {
   Button,
   chakra,
@@ -11,6 +12,8 @@ import {
   InputGroup,
   InputLeftElement,
   InputRightElement,
+  LinkBox,
+  LinkOverlay,
   Menu,
   MenuButton,
   MenuItem,
@@ -24,8 +27,8 @@ import { RiSearchLine } from "react-icons/ri";
 import { FiMoreVertical, FiPlus } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "react-use";
-import CreateGroup from "./create";
-import EditGroup from "./edit";
+import CreateGroup from "./modals/create";
+import EditGroup from "./modals/edit";
 
 type ListProps = {
   groups: {
@@ -118,6 +121,7 @@ const GroupList = ({ groups: initialGroups }: ListProps) => {
         {groups?.map((group, idx) => (
           <Stack
             key={idx}
+            as={LinkBox}
             px={3}
             py={3}
             spacing={3}
@@ -129,7 +133,12 @@ const GroupList = ({ groups: initialGroups }: ListProps) => {
             }}
           >
             <chakra.div boxSize="30px" rounded="full" bgColor={randomColor({ string: group.name })} />
-            <Text flexGrow="1">{group.name}</Text>
+
+            <Text flexGrow="1">
+              <NextLink href={`/app/group/${group.id}`} passHref>
+                <LinkOverlay>{group.name}</LinkOverlay>
+              </NextLink>
+            </Text>
 
             <chakra.div pl={2}>
               <Menu>

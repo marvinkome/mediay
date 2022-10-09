@@ -1,8 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "libs/prisma";
 import { withSession } from "libs/session";
+import { encryptData } from "libs/encrypt";
 
-const LOG_TAG = "[update-group]";
+const LOG_TAG = "[remove-service]";
 
 const handle = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -24,8 +25,8 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         // validate body
-        const { id, name } = body;
-        if (!name || !id) {
+        const { id } = body;
+        if (!id) {
           console.warn("%s Validation Error - %j", LOG_TAG, {
             body,
           });
@@ -33,34 +34,31 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "Invalid payload" });
         }
 
-        const groupMember = await prisma.groupMember.findFirst({
-          where: { groupId: id, userId: session.userId },
-          select: { isAdmin: true },
+        const serviceUser = await prisma.serviceUser.findFirst({
+          where: { serviceId: id, userId: session.userId },
+          select: { isCreator: true },
         });
 
-        if (!groupMember || !groupMember.isAdmin) {
-          console.warn("%s Only admin can edit group - %j", LOG_TAG, {
+        if (!serviceUser || !serviceUser.isCreator) {
+          console.warn("%s Only service creator can delete service - %j", LOG_TAG, {
             body,
           });
 
-          return res.status(400).send({ error: "Only admin can update group" });
+          return res.status(400).send({ error: "Only service owner can delete service" });
         }
 
-        console.log("%s updating group - %j", LOG_TAG, {
-          group: { name: body.name },
+        console.log("%s deleting services - %j", LOG_TAG, {
+          service: { id },
         });
 
-        const group = await prisma.group.update({
-          where: { id },
-          data: { name },
-          select: {
-            id: true,
-            name: true,
-          },
-        });
+        // remove service users
+        const [, service] = await prisma.$transaction([
+          prisma.serviceUser.deleteMany({ where: { serviceId: id } }),
+          prisma.service.delete({ where: { id }, select: { id: true } }),
+        ]);
 
-        console.log("%s group updated - %j", LOG_TAG, { group });
-        return res.send({ group });
+        console.log("%s service deleted - %j", LOG_TAG, { service });
+        return res.send({ service });
       }
       default:
         console.warn("%s unauthorized method %s", LOG_TAG, method);
