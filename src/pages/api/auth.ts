@@ -71,7 +71,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         await req.session.save();
 
         // redirect to dashboard
-        return res.send({ redirect: true, url: `/app` });
+        return res.send({ message: "Auth successful" });
       }
       default:
         console.warn("%s unauthorized method - %s", LOG_TAG, method);

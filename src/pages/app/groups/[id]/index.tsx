@@ -447,13 +447,17 @@ const Page = ({ user, group, members, groups, ...props }: PageProps) => {
                     </Center>
                   )}
 
-                  {!search && !groups?.length && !isLoading && (
-                    <Center h="40vh" bgColor="#fff" flexDirection="column">
-                      <Image src="/empty-group.svg" alt="empty group" />
+                  {!search && !services?.length && !isLoading && (
+                    <Center h="45vh" bgColor="#fff" flexDirection="column">
+                      <Image src="/empty-subs.svg" alt="empty group" />
 
-                      <Heading mb={4} fontSize="2xl">
-                        No subscription
+                      <Heading mb={1} fontSize="2xl">
+                        No Subscriptions
                       </Heading>
+
+                      <Text color="rgb(0 0 0 / 55%)" mb={4}>
+                        Click to add a new subscription
+                      </Text>
 
                       <AddService>
                         <Button fontSize="sm" colorScheme="primary" leftIcon={<Icon boxSize={5} as={IoIosAdd} />}>
@@ -629,6 +633,15 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
   });
   const member = members.find((member) => member.user.id === req.session.data?.userId);
   const isMember = !!member;
+
+  if (!isMember) {
+    return {
+      redirect: {
+        destination: `/app/groups/${group.id}/join`,
+        permanent: false,
+      },
+    };
+  }
 
   let services = await prisma.service.findMany({
     where: { groupId: group.id },

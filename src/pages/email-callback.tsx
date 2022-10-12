@@ -1,12 +1,15 @@
 import React from "react";
 import Api from "libs/api";
+import { useRouter } from "next/router";
 import { toParams } from "libs/react-oauth2/helpers";
 import { chakra, Center, CircularProgress, Text } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
 
 const Page = () => {
+  const router = useRouter();
   const authMutation = useMutation(async (data) => {
-    return Api().post("/auth", data);
+    await Api().post("/auth", data);
+    router.push("/app");
   });
 
   React.useEffect(() => {
