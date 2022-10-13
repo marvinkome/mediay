@@ -34,6 +34,7 @@ import {
   useBreakpointValue,
   useDisclosure,
   useToast,
+  useClipboard,
 } from "@chakra-ui/react";
 import { randomColor } from "@chakra-ui/theme-tools";
 import { IoIosAdd } from "react-icons/io";
@@ -46,21 +47,25 @@ import CreateGroup from "components/groups/create";
 import EditGroup from "components/groups/modals/edit";
 import { IoClose } from "react-icons/io5";
 
-export const List = ({ groups: initialGroups }: { groups: PageProps["groups"] }) => {
+const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+if (!appUrl) {
+  throw new Error("APP_URL env variable not set");
+}
+
+const ListItem = ({ group, user }: { group: PageData["groups"][0]; user: PageData["user"] }) => {
   const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const isAdmin = !!group.members.find((m) => m.isAdmin && m.user.id === user.id);
+
+  const { hasCopied, onCopy } = useClipboard(`${appUrl}/app/groups/${group.id}/join`);
+
   const confirmRemoveModal = useDisclosure();
   const modalMotionPreset = useBreakpointValue<any>({ base: "slideInBottom", md: "scale" });
 
-  const [initialData, setInitialData] = React.useState<any>(initialGroups);
-  const [rawSearch, setRawSearch] = React.useState<string>();
-  const [search, setSearch] = React.useState<string>();
-
-  useDebounce(() => setSearch(rawSearch), 2000, [rawSearch]);
-
-  const queryClient = useQueryClient();
   const deleteGroupMutation = useMutation(
-    async (id: string) => {
-      return Api().post(`/groups/remove`, { id });
+    async () => {
+      return Api().post(`/groups/remove`, { id: group.id });
     },
     {
       onSuccess: async () => {
@@ -81,11 +86,138 @@ export const List = ({ groups: initialGroups }: { groups: PageProps["groups"] })
     }
   );
 
+  return (
+    <Stack
+      as={LinkBox}
+      px={3}
+      py={3}
+      spacing={3}
+      direction="row"
+      alignItems="center"
+      cursor="pointer"
+      _hover={{
+        bgColor: "rgba(47, 53, 66, 0.04)",
+      }}
+    >
+      <chakra.div boxSize="30px" rounded="full" bgColor={randomColor({ string: group.name })} />
+
+      <Text flexGrow="1">
+        <NextLink href={`/app/groups/${group.id}`} passHref>
+          <LinkOverlay>{group.name}</LinkOverlay>
+        </NextLink>
+      </Text>
+
+      <chakra.div pl={2}>
+        <Menu>
+          <MenuButton
+            as={IconButton}
+            aria-label="open group option menu"
+            icon={<Icon as={FiMoreVertical} boxSize={5} />}
+            size="sm"
+            variant="ghost"
+            colorScheme="whiteAlpha"
+            color="gray.700"
+          />
+
+          <MenuList py={0} rounded="4px" border="1px solid rgba(2, 2, 4, 0.08)" filter="drop-shadow(0px 8px 64px rgba(0, 0, 0, 0.1))">
+            <MenuItem
+              fontSize="sm"
+              _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
+              _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
+              onClick={onCopy}
+            >
+              {hasCopied ? "Copied" : "Copy Invite Link"}
+            </MenuItem>
+
+            {isAdmin && (
+              <EditGroup group={group}>
+                <MenuItem fontSize="sm" _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }} _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}>
+                  Edit Group
+                </MenuItem>
+              </EditGroup>
+            )}
+
+            {isAdmin && (
+              <MenuItem
+                fontSize="sm"
+                onClick={() => confirmRemoveModal.onOpen()}
+                _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
+                _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
+              >
+                Delete Group
+              </MenuItem>
+            )}
+          </MenuList>
+        </Menu>
+      </chakra.div>
+
+      <Modal isOpen={confirmRemoveModal.isOpen} onClose={confirmRemoveModal.onClose} motionPreset={modalMotionPreset}>
+        <ModalContent
+          px={6}
+          rounded="4px"
+          overflow="hidden"
+          mb={{ base: "0", md: 8 }}
+          pos={{ base: "fixed", md: "relative" }}
+          bottom={{ base: "0px", md: "initial" }}
+        >
+          <ModalHeader px={0} pt={4}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Heading fontSize="lg" fontWeight="600">
+                Delete Group
+              </Heading>
+
+              <IconButton
+                size="sm"
+                variant="outline"
+                rounded="full"
+                onClick={() => confirmRemoveModal.onClose()}
+                aria-label="close-modal"
+                _hover={{ bgColor: "primary.50" }}
+                icon={<Icon boxSize="18px" as={IoClose} />}
+              />
+            </Stack>
+          </ModalHeader>
+
+          <ModalBody px={0}>
+            <Text color="rgb(0 0 0 / 60%)">
+              Are you sure you want to remove this subscription? You will not be able to undo this action
+            </Text>
+          </ModalBody>
+
+          <ModalFooter px={0}>
+            <Button
+              mr={3}
+              variant="ghost"
+              colorScheme="gray"
+              fontSize="sm"
+              onClick={confirmRemoveModal.onClose}
+              isDisabled={deleteGroupMutation.isLoading}
+            >
+              Cancel
+            </Button>
+
+            <Button colorScheme="red" fontSize="sm" onClick={() => deleteGroupMutation.mutate()} isLoading={deleteGroupMutation.isLoading}>
+              Delete Group
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Stack>
+  );
+};
+
+export const List = ({ user, groups: initialGroups }: { user: PageData["user"]; groups: PageData["groups"] }) => {
+  const [initialData, setInitialData] = React.useState<any>(initialGroups);
+  const [rawSearch, setRawSearch] = React.useState<string>();
+  const [search, setSearch] = React.useState<string>();
+
+  useDebounce(() => setSearch(rawSearch), 2000, [rawSearch]);
+
   React.useEffect(() => {
     setInitialData(undefined);
   }, []);
 
-  const { data: groups, isLoading } = useQuery<PageProps["groups"]>({
+  const { data: groups, isLoading } = useQuery<PageData["groups"]>({
     queryKey: ["groups", search],
     queryFn: async () => {
       const { payload } = await Api().get(`/groups?search=${search ?? ""}`);
@@ -156,133 +288,15 @@ export const List = ({ groups: initialGroups }: { groups: PageProps["groups"] })
           </Stack>
         )}
 
-        {groups?.map((group, idx) => (
-          <Stack
-            key={idx}
-            as={LinkBox}
-            px={3}
-            py={3}
-            spacing={3}
-            direction="row"
-            alignItems="center"
-            cursor="pointer"
-            _hover={{
-              bgColor: "rgba(47, 53, 66, 0.04)",
-            }}
-          >
-            <chakra.div boxSize="30px" rounded="full" bgColor={randomColor({ string: group.name })} />
-
-            <Text flexGrow="1">
-              <NextLink href={`/app/groups/${group.id}`} passHref>
-                <LinkOverlay>{group.name}</LinkOverlay>
-              </NextLink>
-            </Text>
-
-            <chakra.div pl={2}>
-              <Menu>
-                <MenuButton
-                  as={IconButton}
-                  aria-label="open group option menu"
-                  icon={<Icon as={FiMoreVertical} boxSize={5} />}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="whiteAlpha"
-                  color="gray.700"
-                />
-
-                <MenuList py={0} rounded="4px" border="1px solid rgba(2, 2, 4, 0.08)" filter="drop-shadow(0px 8px 64px rgba(0, 0, 0, 0.1))">
-                  <MenuItem fontSize="sm" _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }} _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}>
-                    Copy Invite Link
-                  </MenuItem>
-
-                  <EditGroup group={group}>
-                    <MenuItem fontSize="sm" _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }} _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}>
-                      Edit Group
-                    </MenuItem>
-                  </EditGroup>
-
-                  <MenuItem
-                    fontSize="sm"
-                    onClick={() => confirmRemoveModal.onOpen()}
-                    _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
-                    _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
-                  >
-                    Delete Group
-                  </MenuItem>
-                </MenuList>
-              </Menu>
-            </chakra.div>
-
-            <Modal isOpen={confirmRemoveModal.isOpen} onClose={confirmRemoveModal.onClose} motionPreset={modalMotionPreset}>
-              <ModalContent
-                px={6}
-                rounded="4px"
-                overflow="hidden"
-                mb={{ base: "0", md: 8 }}
-                pos={{ base: "fixed", md: "relative" }}
-                bottom={{ base: "0px", md: "initial" }}
-              >
-                <ModalHeader px={0} pt={4}>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Heading fontSize="lg" fontWeight="600">
-                      Delete Group
-                    </Heading>
-
-                    <IconButton
-                      size="sm"
-                      variant="outline"
-                      rounded="full"
-                      onClick={() => confirmRemoveModal.onClose()}
-                      aria-label="close-modal"
-                      _hover={{ bgColor: "primary.50" }}
-                      icon={<Icon boxSize="18px" as={IoClose} />}
-                    />
-                  </Stack>
-                </ModalHeader>
-
-                <ModalBody px={0}>
-                  <Text color="rgb(0 0 0 / 60%)">
-                    Are you sure you want to remove this subscription? You will not be able to undo this action
-                  </Text>
-                </ModalBody>
-
-                <ModalFooter px={0}>
-                  <Button
-                    mr={3}
-                    variant="ghost"
-                    colorScheme="gray"
-                    fontSize="sm"
-                    onClick={confirmRemoveModal.onClose}
-                    isDisabled={deleteGroupMutation.isLoading}
-                  >
-                    Cancel
-                  </Button>
-
-                  <Button
-                    colorScheme="red"
-                    fontSize="sm"
-                    onClick={() => deleteGroupMutation.mutate(group.id)}
-                    isLoading={deleteGroupMutation.isLoading}
-                  >
-                    Delete Group
-                  </Button>
-                </ModalFooter>
-              </ModalContent>
-            </Modal>
-          </Stack>
+        {groups?.map((group) => (
+          <ListItem key={group.id} group={group} user={user} />
         ))}
       </Stack>
     </chakra.div>
   );
 };
 
-type PageProps = {
-  groups: {
-    id: string;
-    name: string;
-  }[];
-};
-const Page = ({ groups }: PageProps) => {
+const Page = ({ groups, user }: PageData) => {
   return (
     <Stack direction="row" minH="80vh" spacing={{ base: 0, md: 10 }}>
       <chakra.div display={{ base: "none", md: "block" }} flex={2}>
@@ -309,13 +323,30 @@ const Page = ({ groups }: PageProps) => {
       </chakra.div>
 
       <chakra.div flex={1}>
-        <List groups={groups} />
+        <List groups={groups} user={user} />
       </chakra.div>
     </Stack>
   );
 };
 
-const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
+interface PageData {
+  user: {
+    id: string;
+    fullName: string | null;
+    email: string;
+  };
+  groups: {
+    id: string;
+    name: string;
+    members: {
+      isAdmin: boolean;
+      user: {
+        id: string;
+      };
+    }[];
+  }[];
+}
+const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params }) => {
   if (!req.session.data) {
     return {
       redirect: {
@@ -333,7 +364,7 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
 
   const user = await prisma.user.findUnique({
     where: { id: req.session.data.userId },
-    select: { fullName: true, email: true },
+    select: { id: true, fullName: true, email: true },
   });
 
   if (!user) {
@@ -357,6 +388,10 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
     select: {
       id: true,
       name: true,
+      members: {
+        where: { isAdmin: true },
+        select: { isAdmin: true, user: { select: { id: true } } },
+      },
     },
   });
 
@@ -364,6 +399,7 @@ const getServerSidePropsFn: GetServerSideProps = async ({ req, params }) => {
     props: {
       id,
       groups,
+      user,
       layoutProps: {
         user,
       },

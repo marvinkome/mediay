@@ -479,7 +479,7 @@ const Members = ({ group, members, requests, user }: MembersProps) => {
                 <Stack direction="row">
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="outline"
                     colorScheme="primary"
                     isDisabled={declineRequest.isLoading}
                     isLoading={acceptRequest.isLoading}
@@ -490,7 +490,7 @@ const Members = ({ group, members, requests, user }: MembersProps) => {
 
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="outline"
                     colorScheme="red"
                     isDisabled={acceptRequest.isLoading}
                     isLoading={declineRequest.isLoading}
@@ -648,7 +648,7 @@ const Page = ({ user, group, members, requests, groups, ...props }: PageData) =>
       </chakra.div>
 
       <chakra.div flex={1} display={{ base: "none", md: "block" }}>
-        <List groups={groups} />
+        <List groups={groups} user={user} />
       </chakra.div>
     </Stack>
   );
@@ -693,6 +693,12 @@ interface PageData {
   groups: {
     id: string;
     name: string;
+    members: {
+      isAdmin: boolean;
+      user: {
+        id: string;
+      };
+    }[];
   }[];
 }
 const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params }) => {
@@ -732,6 +738,10 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
     select: {
       id: true,
       name: true,
+      members: {
+        where: { isAdmin: true },
+        select: { isAdmin: true, user: { select: { id: true } } },
+      },
     },
   });
 
@@ -789,7 +799,6 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
   let { services, requests, members, ...group } = groupData;
 
   const member = members.find((member) => member.user.id === req.session.data?.userId);
-  const isAdmin = member?.isAdmin;
   const isMember = !!member;
   if (!isMember) {
     return {

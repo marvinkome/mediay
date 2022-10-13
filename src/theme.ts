@@ -45,7 +45,7 @@ const theme = extendTheme({
         },
       },
       variants: {
-        ghost: (props: any) => {
+        outline: (props: any) => {
           const { colorScheme: c } = props;
           const bgColor = mode(`gray.200`, `whiteAlpha.300`)(props);
 
