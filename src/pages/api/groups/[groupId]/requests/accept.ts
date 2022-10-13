@@ -40,7 +40,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "Invalid payload" });
         }
 
-        const group = await prisma.group.findUnique({ where: { id: body.groupId }, include: { members: true, requests: true } });
+        const group = await prisma.group.findUnique({ where: { id: groupId as string }, include: { members: true, requests: true } });
         if (!group) {
           console.warn("%s group not found - %j", LOG_TAG, {
             body,
