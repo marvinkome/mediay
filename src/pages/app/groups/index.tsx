@@ -173,7 +173,7 @@ export const List = ({ groups: initialGroups }: { groups: PageProps["groups"] })
             <chakra.div boxSize="30px" rounded="full" bgColor={randomColor({ string: group.name })} />
 
             <Text flexGrow="1">
-              <NextLink href={`/app/group/${group.id}`} passHref>
+              <NextLink href={`/app/groups/${group.id}`} passHref>
                 <LinkOverlay>{group.name}</LinkOverlay>
               </NextLink>
             </Text>

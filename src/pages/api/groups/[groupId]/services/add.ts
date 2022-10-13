@@ -35,7 +35,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
 
         if (!groupId) {
           console.error("%s No group Id in query- %j", LOG_TAG, { groupId });
-          return res.send({ error: "Invalid request" });
+          return res.status(404).send(undefined);
         }
 
         // validate body

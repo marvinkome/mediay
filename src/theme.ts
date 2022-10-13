@@ -1,4 +1,5 @@
 import { extendTheme } from "@chakra-ui/react";
+import { mode, transparentize } from "@chakra-ui/theme-tools";
 
 const theme = extendTheme({
   fonts: {
@@ -41,6 +42,25 @@ const theme = extendTheme({
         md: {
           py: 2,
           fontSize: "sm",
+        },
+      },
+      variants: {
+        ghost: (props: any) => {
+          const { colorScheme: c } = props;
+          const bgColor = mode(`gray.200`, `whiteAlpha.300`)(props);
+
+          return {
+            border: "1px solid",
+            borderColor: "transparent",
+            bgColor: c === "gray" ? bgColor : mode(`${c}.50`, transparentize(`${c}.200`, 0.12)(theme))(props),
+
+            _hover: {
+              borderColor: c === "gray" ? bgColor : "currentColor",
+            },
+            _active: {
+              borderColor: c === "gray" ? bgColor : "currentColor",
+            },
+          };
         },
       },
     },

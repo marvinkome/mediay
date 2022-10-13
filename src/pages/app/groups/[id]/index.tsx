@@ -41,6 +41,7 @@ import {
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
+import { randomColor } from "@chakra-ui/theme-tools";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { useDebounce } from "react-use";
 import { useRouter } from "next/router";
@@ -52,6 +53,7 @@ import { IoClose } from "react-icons/io5";
 
 import AddService from "components/add-service";
 import { List } from "pages/app/groups";
+import { routeReplace } from "libs/utils";
 
 const Service = ({ service, user }: { service: PageData["services"][0]; user: PageData["user"] }) => {
   const toast = useToast();
@@ -343,9 +345,171 @@ const Service = ({ service, user }: { service: PageData["services"][0]; user: Pa
   );
 };
 
-type PageProps = InferGetServerSidePropsType<typeof getServerSidePropsFn>;
-const Page = ({ user, group, members, groups, ...props }: PageProps) => {
-  const [initialServices, setInitialServices] = React.useState<PageProps["services"] | undefined>(props.services);
+type MembersProps = {
+  members: PageData["members"];
+  requests: PageData["requests"];
+  user: PageData["user"];
+  group: PageData["group"];
+};
+const Members = ({ group, members, requests, user }: MembersProps) => {
+  const router = useRouter();
+  const toast = useToast();
+
+  const admin = members.find((m) => m.isAdmin);
+  const groupMembers = members.filter((m) => !m.isAdmin);
+
+  const isAdmin = admin?.user.id === user.id;
+
+  const acceptRequest = useMutation(
+    async ({ userId }: { userId: string }) => {
+      const { payload } = await Api().post(`/groups/${group.id}/requests/accept`, { userId });
+      await routeReplace(router.asPath);
+
+      return payload;
+    },
+    {
+      onError: (err: any) => {
+        console.error(err);
+        toast({
+          title: "Error accepting request",
+          description: err.message,
+          status: "error",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+    }
+  );
+
+  const declineRequest = useMutation(
+    async ({ userId }: { userId: string }) => {
+      const { payload } = await Api().post(`/groups/${group.id}/requests/decline`, { userId });
+      await routeReplace(router.asPath);
+
+      return payload;
+    },
+    {
+      onError: (err: any) => {
+        console.error(err);
+        toast({
+          title: "Error declining request",
+          description: err.message,
+          status: "error",
+          position: "top-right",
+          isClosable: true,
+        });
+      },
+    }
+  );
+
+  return (
+    <>
+      <chakra.div>
+        <Stack py={2}>
+          <Heading
+            as="h4"
+            py={2}
+            fontSize="xs"
+            opacity={0.48}
+            fontWeight="600"
+            textTransform="uppercase"
+            borderBottom="1px solid rgba(58, 27, 234, 0.08)"
+          >
+            Group Admin
+          </Heading>
+        </Stack>
+
+        <Stack spacing={2}>
+          <Stack py={2} spacing={3} direction="row" alignItems="center">
+            <chakra.div boxSize="28px" rounded="full" bgColor={randomColor({ string: admin?.user.fullName || "" })} />
+            <Text flexGrow="1">{admin?.user.fullName}</Text>
+          </Stack>
+        </Stack>
+      </chakra.div>
+
+      {!!groupMembers.length && (
+        <chakra.div>
+          <Stack py={2}>
+            <Heading
+              as="h4"
+              py={2}
+              fontSize="xs"
+              opacity={0.48}
+              fontWeight="600"
+              textTransform="uppercase"
+              borderBottom="1px solid rgba(58, 27, 234, 0.08)"
+            >
+              {groupMembers.length} Members
+            </Heading>
+          </Stack>
+
+          <Stack spacing={2}>
+            {groupMembers.map((member, idx) => (
+              <Stack key={idx} py={2} spacing={3} direction="row" alignItems="center">
+                <chakra.div boxSize="28px" rounded="full" bgColor={randomColor({ string: member.user.fullName || "" })} />
+                <Text flexGrow="1">{member.user.fullName}</Text>
+              </Stack>
+            ))}
+          </Stack>
+        </chakra.div>
+      )}
+
+      {!!requests.length && isAdmin && (
+        <chakra.div>
+          <Stack py={2}>
+            <Heading
+              as="h4"
+              py={2}
+              fontSize="xs"
+              opacity={0.48}
+              fontWeight="600"
+              textTransform="uppercase"
+              borderBottom="1px solid rgba(58, 27, 234, 0.08)"
+            >
+              {requests.length} Requests
+            </Heading>
+          </Stack>
+
+          <Stack spacing={2}>
+            {requests.map((request, idx) => (
+              <Stack key={idx} py={2} spacing={3} direction="row" alignItems="center">
+                <chakra.div boxSize="28px" rounded="full" bgColor={randomColor({ string: request.user.fullName || "" })} />
+                <Text flexGrow="1">{request.user.fullName}</Text>
+
+                <Stack direction="row">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="primary"
+                    isDisabled={declineRequest.isLoading}
+                    isLoading={acceptRequest.isLoading}
+                    onClick={() => acceptRequest.mutate({ userId: request.user.id })}
+                  >
+                    Accept
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="red"
+                    isDisabled={acceptRequest.isLoading}
+                    isLoading={declineRequest.isLoading}
+                    onClick={() => declineRequest.mutate({ userId: request.user.id })}
+                  >
+                    Decline
+                  </Button>
+                </Stack>
+              </Stack>
+            ))}
+          </Stack>
+        </chakra.div>
+      )}
+    </>
+  );
+};
+
+const Page = ({ user, group, members, requests, groups, ...props }: PageData) => {
+  const [initialServices, setInitialServices] = React.useState<PageData["services"] | undefined>(props.services);
   const [rawSearch, setRawSearch] = React.useState<string>();
   const [search, setSearch] = React.useState<string>();
 
@@ -355,7 +519,7 @@ const Page = ({ user, group, members, groups, ...props }: PageProps) => {
     setInitialServices(undefined);
   }, []);
 
-  const { data: services, isLoading } = useQuery<PageProps["services"]>({
+  const { data: services, isLoading } = useQuery<PageData["services"]>({
     queryKey: ["services", group.id, search],
     queryFn: async () => {
       const { payload } = await Api().get(`/groups/${group.id}/services?search=${search ?? ""}`);
@@ -475,50 +639,7 @@ const Page = ({ user, group, members, groups, ...props }: PageProps) => {
 
               <TabPanel p={0}>
                 <Stack px={6} py={4}>
-                  <chakra.div>
-                    <Stack py={2}>
-                      <Heading
-                        as="h4"
-                        py={2}
-                        fontSize="xs"
-                        opacity={0.48}
-                        fontWeight="600"
-                        textTransform="uppercase"
-                        borderBottom="1px solid rgba(58, 27, 234, 0.08)"
-                      >
-                        Group Admin
-                      </Heading>
-                    </Stack>
-
-                    <Stack spacing={2}>
-                      {members
-                        .filter((m) => m.isAdmin)
-                        .map((member) => (
-                          <Stack key={member.user.id} py={2} spacing={3} direction="row" alignItems="center">
-                            <chakra.div boxSize="32px" rounded="full" bgColor="#C69CFC" />
-                            <Text flexGrow="1">{member.user.fullName}</Text>
-                          </Stack>
-                        ))}
-                    </Stack>
-                  </chakra.div>
-
-                  {members.filter((m) => !m.isAdmin).length && (
-                    <chakra.div>
-                      <Stack py={2}>
-                        <Heading
-                          as="h4"
-                          py={2}
-                          fontSize="xs"
-                          opacity={0.48}
-                          fontWeight="600"
-                          textTransform="uppercase"
-                          borderBottom="1px solid rgba(58, 27, 234, 0.08)"
-                        >
-                          {members.filter((m: any) => !m.isAdmin).length} Members
-                        </Heading>
-                      </Stack>
-                    </chakra.div>
-                  )}
+                  <Members group={group} members={members} requests={requests} user={user} />
                 </Stack>
               </TabPanel>
             </TabPanels>
@@ -562,6 +683,12 @@ interface PageData {
       fullName: string | null;
     };
     isAdmin: boolean;
+  }[];
+  requests: {
+    user: {
+      id: string;
+      fullName: string | null;
+    };
   }[];
   groups: {
     id: string;
@@ -608,32 +735,62 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
     },
   });
 
-  const group = await prisma.group.findUnique({
+  const groupData = await prisma.group.findUnique({
     where: { id },
     select: {
       id: true,
       name: true,
-    },
-  });
-  if (!group) {
-    return { notFound: true };
-  }
-
-  const members = await prisma.groupMember.findMany({
-    where: { groupId: group.id },
-    select: {
-      isAdmin: true,
-      user: {
+      members: {
+        select: {
+          isAdmin: true,
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+        },
+      },
+      requests: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+        },
+      },
+      services: {
         select: {
           id: true,
-          fullName: true,
+          name: true,
+          numberOfPeople: true,
+          instructions: true,
+          users: {
+            select: {
+              isCreator: true,
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                },
+              },
+            },
+          },
         },
       },
     },
   });
-  const member = members.find((member) => member.user.id === req.session.data?.userId);
-  const isMember = !!member;
+  if (!groupData) {
+    return { notFound: true };
+  }
 
+  let { services, requests, members, ...group } = groupData;
+
+  const member = members.find((member) => member.user.id === req.session.data?.userId);
+  const isAdmin = member?.isAdmin;
+  const isMember = !!member;
   if (!isMember) {
     return {
       redirect: {
@@ -643,26 +800,6 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
     };
   }
 
-  let services = await prisma.service.findMany({
-    where: { groupId: group.id },
-    select: {
-      id: true,
-      name: true,
-      numberOfPeople: true,
-      instructions: true,
-      users: {
-        select: {
-          isCreator: true,
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-            },
-          },
-        },
-      },
-    },
-  });
   services = services.map((service) => {
     return {
       ...service,
@@ -676,6 +813,7 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
       user,
       group,
       members,
+      requests,
       services,
       groups,
       layoutProps: {

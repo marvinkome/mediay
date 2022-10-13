@@ -24,7 +24,7 @@ import { motion } from "framer-motion";
 import { FcGoogle } from "react-icons/fc";
 import { useRouter } from "next/router";
 import { useOAuth } from "hooks/auth";
-import { useMutation, UseMutationResult } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import supabase from "libs/supabase";
 import { IoClose } from "react-icons/io5";
 
@@ -40,7 +40,7 @@ type AuthContainerProps = {
   onClose: () => void;
   children: React.ReactNode;
 };
-const AuthContainer = ({ isOpen, onClose, children }: AuthContainerProps) => {
+export const AuthContainer = ({ isOpen, onClose, children }: AuthContainerProps) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm" scrollBehavior="inside">
       <ModalOverlay />
@@ -85,7 +85,7 @@ const AuthContainer = ({ isOpen, onClose, children }: AuthContainerProps) => {
 type EmailAuthProps = {
   auth: (data: { email: string; fullName: string }) => Promise<void>;
 };
-const EmailAuth = ({ auth }: EmailAuthProps) => {
+export const EmailAuth = ({ auth }: EmailAuthProps) => {
   const [isSignup, setIsSignup] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [fullName, setFullName] = React.useState("");
@@ -110,7 +110,7 @@ const EmailAuth = ({ auth }: EmailAuthProps) => {
   return (
     <Stack as="form" spacing={4} onSubmit={onEmailSubmit}>
       {emailAuthMutation.isSuccess ? (
-        <Text fontSize="sm">
+        <Text>
           We&apos;ve sent an email to <chakra.span fontWeight="600">{email}</chakra.span>, it contains a link to continue.
         </Text>
       ) : (
@@ -165,7 +165,7 @@ const EmailAuth = ({ auth }: EmailAuthProps) => {
 type GoogleAuthProps = {
   auth: (data: any) => void;
 };
-const GoogleAuth = ({ auth }: GoogleAuthProps) => {
+export const GoogleAuth = ({ auth }: GoogleAuthProps) => {
   // google login
   const googleAuthSignIn = useOAuth({ provider: "google" });
   const googleAuthMutation = useMutation(async () => {

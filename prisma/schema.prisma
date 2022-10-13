@@ -55,7 +55,7 @@ model GroupRequest {
   group   Group  @relation(fields: [groupId], references: [id])
   groupId String
 
-  @@id([userId, groupId])
+  @@id([userId, groupId], name: "id")
 }
 
 model Service {
