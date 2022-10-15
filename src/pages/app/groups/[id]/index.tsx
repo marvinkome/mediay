@@ -52,6 +52,7 @@ import { FiEdit, FiMoreVertical } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
 
 import AddService from "components/add-service";
+import EditService from "components/edit-service";
 import { List } from "pages/app/groups";
 import { routeReplace } from "libs/utils";
 
@@ -161,14 +162,29 @@ const Service = ({ service, user }: { service: PageData["services"][0]; user: Pa
             />
 
             <MenuList py={0} rounded="4px" border="1px solid rgba(2, 2, 4, 0.08)" filter="drop-shadow(0px 8px 64px rgba(0, 0, 0, 0.1))">
-              <MenuItem
-                fontSize="sm"
-                _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
-                _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
-                onClick={confirmRemoveModal.onOpen}
-              >
-                Remove subscription
-              </MenuItem>
+              {isOwner && (
+                <EditService service={service}>
+                  <MenuItem
+                    fontSize="sm"
+                    _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
+                    _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
+                    onClick={confirmRemoveModal.onOpen}
+                  >
+                    Edit subscription
+                  </MenuItem>
+                </EditService>
+              )}
+
+              {(isOwner || user.isAdmin) && (
+                <MenuItem
+                  fontSize="sm"
+                  _hover={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
+                  _focus={{ bgColor: "rgba(47, 53, 66, 0.04)" }}
+                  onClick={confirmRemoveModal.onOpen}
+                >
+                  Remove subscription
+                </MenuItem>
+              )}
             </MenuList>
           </Menu>
         </chakra.div>
@@ -657,6 +673,7 @@ const Page = ({ user, group, members, requests, groups, ...props }: PageData) =>
 interface PageData {
   user: {
     id: string;
+    isAdmin: boolean;
     fullName: string | null;
     email: string;
   };
@@ -667,6 +684,7 @@ interface PageData {
   services: {
     id: string;
     name: string;
+    cost: number;
     numberOfPeople: number;
     instructions: string;
     users: {
@@ -776,6 +794,7 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
           id: true,
           name: true,
           numberOfPeople: true,
+          cost: true,
           instructions: true,
           users: {
             select: {
@@ -819,12 +838,15 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
   return {
     props: {
       id,
-      user,
       group,
       members,
       requests,
       services,
       groups,
+      user: {
+        ...user,
+        isAdmin: member.isAdmin,
+      },
       layoutProps: {
         user,
       },

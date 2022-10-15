@@ -1,9 +1,17 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import joi from "joi";
 import prisma from "libs/prisma";
 import { withSession } from "libs/session";
 import { encryptData } from "libs/encrypt";
 
 const LOG_TAG = "[update-group-service]";
+
+const bodySchema = joi.object({
+  name: joi.string(),
+  cost: joi.number().min(0),
+  numberOfPeople: joi.number().min(1),
+  instructions: joi.string(),
+});
 
 const handle = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -24,14 +32,17 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.send({ redirect: true, url: "/" });
         }
 
+        const { id, instructions, ...payload } = body;
+
         // validate body
-        const { id, instructions } = body;
-        if (!instructions || !id) {
+        const { error } = bodySchema.validate({ instructions, ...payload });
+        if (error) {
           console.warn("%s Validation Error - %j", LOG_TAG, {
+            error,
             body,
           });
 
-          return res.status(400).send({ error: "Invalid payload" });
+          return res.status(400).send({ error: "Invalid payload, Please check your data" });
         }
 
         const serviceUser = await prisma.serviceUser.findFirst({
@@ -40,20 +51,23 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         });
 
         if (!serviceUser || !serviceUser.isCreator) {
-          console.warn("%s Only service creator can edit instructions - %j", LOG_TAG, {
+          console.warn("%s Only service creator can edit service - %j", LOG_TAG, {
             body,
           });
 
-          return res.status(400).send({ error: "Only service owner can edit instructions" });
+          return res.status(400).send({ error: "Only service owner can edit service" });
         }
 
-        console.log("%s updating instructions - %j", LOG_TAG, {
+        console.log("%s updating service - %j", LOG_TAG, {
           service: { id },
         });
 
         const service = await prisma.service.update({
           where: { id },
-          data: { instructions: encryptData(instructions) },
+          data: {
+            ...payload,
+            instructions: encryptData(instructions),
+          },
           select: {
             id: true,
           },
