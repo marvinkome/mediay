@@ -9,7 +9,7 @@ import { withSessionSsr } from "libs/session";
 import { AuthContainer, EmailAuth, GoogleAuth } from "components/auth";
 import { useMutation } from "@tanstack/react-query";
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+const appUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
 if (!appUrl) {
   throw new Error("APP_URL env variable not set");
 }

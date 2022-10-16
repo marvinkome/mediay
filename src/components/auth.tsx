@@ -30,7 +30,7 @@ import { IoClose } from "react-icons/io5";
 
 const MotionFormControl = motion(FormControl);
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+const appUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
 if (!appUrl) {
   throw new Error("APP_URL env variable not set");
 }
