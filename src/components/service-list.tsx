@@ -32,7 +32,7 @@ import { IoIosAdd } from "react-icons/io";
 import { FiMoreVertical, FiEdit } from "react-icons/fi";
 import { IoClose, IoExitOutline } from "react-icons/io5";
 
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { useUser } from "hooks/auth";
 
@@ -68,7 +68,7 @@ const InstructionTextbox = ({ isOwner }: { isOwner: boolean }) => {
   );
 };
 
-const Service = ({ service, admin }: { service: PageData["services"][0]; admin?: PageData["members"][0] }) => {
+const Service = ({ service }: { service: PageData["services"][0] }) => {
   const toast = useToast();
   const serviceModal = useDisclosure();
   const confirmRemoveModal = useDisclosure();
@@ -339,11 +339,11 @@ const Service = ({ service, admin }: { service: PageData["services"][0]; admin?:
   );
 };
 
-const ServiceList = ({ services, admin }: { services: PageData["services"]; admin?: PageData["members"][0] }) => {
+const ServiceList = ({ services }: { services: PageData["services"] }) => {
   return (
     <Stack spacing={4} px={6} py={4}>
       {!!services.length ? (
-        services.map((service) => <Service key={service.id} service={service} admin={admin} />)
+        services.map((service) => <Service key={service.id} service={service} />)
       ) : (
         <Center h="45vh" bgColor="#fff" flexDirection="column">
           <Image src="/empty-subs.svg" alt="empty group" />

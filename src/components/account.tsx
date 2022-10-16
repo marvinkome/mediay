@@ -1,4 +1,5 @@
 import React from "react";
+import Api from "libs/api";
 import {
   Button,
   ButtonProps,
@@ -19,12 +20,16 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { IoClose } from "react-icons/io5";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/router";
+import { routeReplace } from "libs/utils";
 
 type AccountProps = ButtonProps & {
   children?: React.ReactNode;
   user: { id: string; fullName: string | null; email: string };
 };
 const Account = ({ children, user, ...props }: AccountProps) => {
+  const router = useRouter();
   const { isOpen, onClose, onOpen } = useDisclosure();
 
   const [formValue, setFormValue] = React.useState({
@@ -32,8 +37,23 @@ const Account = ({ children, user, ...props }: AccountProps) => {
     email: user?.email || "",
   });
 
+  const editAccountMutation = useMutation(
+    async (data: any) => {
+      return Api().post(`/account`, data);
+    },
+    {
+      onSuccess: async () => {
+        await routeReplace(router.asPath);
+      },
+    }
+  );
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    editAccountMutation.mutate({
+      fullName: formValue.fullName,
+      id: user.id,
+    });
   };
 
   return (
@@ -92,6 +112,7 @@ const Account = ({ children, user, ...props }: AccountProps) => {
                 </FormLabel>
 
                 <Input
+                  isReadOnly
                   rounded="4px"
                   type="email"
                   placeholder="John Doe"
@@ -101,7 +122,7 @@ const Account = ({ children, user, ...props }: AccountProps) => {
               </FormControl>
 
               <chakra.div pt={6} textAlign="right">
-                <Button type="submit" colorScheme="primary" fontSize="sm">
+                <Button type="submit" colorScheme="primary" fontSize="sm" isLoading={editAccountMutation.isLoading}>
                   Update profile
                 </Button>
               </chakra.div>

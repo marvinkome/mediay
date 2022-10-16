@@ -63,7 +63,7 @@ const Page = ({ user, group, members, requests, groups, services, ...props }: Pa
           <chakra.main bgColor="white" minH="40vh">
             <TabPanels>
               <TabPanel p={0}>
-                <ServiceList admin={admin} services={services} />
+                <ServiceList services={services} />
               </TabPanel>
 
               <TabPanel p={0}>

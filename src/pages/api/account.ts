@@ -1,19 +1,19 @@
-import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "libs/prisma";
+import { NextApiRequest, NextApiResponse } from "next";
 import { withSession } from "libs/session";
 
-const LOG_TAG = "[get-groups]";
+const LOG_TAG = "[update-account]";
 
 const handle = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const {
       method,
+      body,
       session: { data: session },
-      query,
     } = req;
 
     switch (method) {
-      case "GET": {
+      case "POST": {
         // verify session
         if (!session || !session.userId) {
           console.warn("%s No logged in user found - %j", LOG_TAG, {
@@ -23,33 +23,32 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.send({ redirect: true, url: "/" });
         }
 
-        const search = query.search as string | undefined;
+        // validate body
+        const { fullName, id } = body;
+        if (!fullName) {
+          console.warn("%s Validation Error - %j", LOG_TAG, {
+            body,
+          });
 
-        console.log("%s fetching groups - %j", LOG_TAG, {
-          search,
+          return res.status(400).send({ error: "Invalid payload" });
+        }
+
+        console.log("%s updating account - %j", LOG_TAG, {
+          body,
         });
 
-        const groups = await prisma.group.findMany({
-          where: {
-            ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
-            members: {
-              some: {
-                userId: session.userId,
-              },
-            },
-          },
+        const user = await prisma.user.update({
+          where: { id },
+          data: { fullName },
           select: {
             id: true,
-            name: true,
+            email: true,
+            fullName: true,
           },
         });
 
-        console.log("%s groups found - %j", LOG_TAG, {
-          search,
-          groups,
-        });
-
-        return res.send({ groups });
+        console.log("%s user updated - %j", LOG_TAG, { user });
+        return res.send({ user });
       }
       default:
         console.warn("%s unauthorized method %s", LOG_TAG, method);
