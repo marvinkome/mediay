@@ -121,14 +121,7 @@ export const EmailAuth = ({ auth }: EmailAuthProps) => {
                 Name
               </FormLabel>
 
-              <Input
-                type="text"
-                name="name"
-                fontSize="sm"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
+              <Input type="text" name="name" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </MotionFormControl>
           )}
 
@@ -137,14 +130,7 @@ export const EmailAuth = ({ auth }: EmailAuthProps) => {
               Email
             </FormLabel>
 
-            <Input
-              type="email"
-              name="email"
-              fontSize="sm"
-              placeholder="johndoe@mail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <Input type="email" name="email" placeholder="johndoe@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} />
           </FormControl>
 
           <Button colorScheme="secondary" fontSize="sm" type="submit" py={3} isLoading={emailAuthMutation.isLoading}>

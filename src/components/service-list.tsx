@@ -153,32 +153,42 @@ const Service = ({ service }: { service: PageData["services"][0] }) => {
   return (
     <chakra.div>
       <Stack
-        px={4}
+        px={{ base: 2, md: 4 }}
         py={4}
-        spacing={4}
+        spacing={{ base: 2, md: 4 }}
         rounded="4px"
         direction="row"
         alignItems="center"
         border="1px solid rgba(58, 27, 234, 0.06)"
         _hover={{ borderColor: "rgba(58, 27, 234, 0.12)" }}
       >
-        <Stack flexGrow="1" direction="row" {...(isMember ? { cursor: "pointer", onClick: () => serviceModal.onOpen() } : {})}>
+        <Stack
+          flexGrow="1"
+          direction="row"
+          alignItems="center"
+          {...(isMember ? { cursor: "pointer", onClick: () => serviceModal.onOpen() } : {})}
+        >
           <Image boxSize={10} src="/disney+.svg" alt={service.name} />
-          <Stack spacing={1} justifyContent="space-between">
+          <Stack spacing={{ base: 0, md: 1 }} justifyContent="center">
             <Heading as="h2" fontWeight="600" fontSize="md" textTransform="capitalize">
               {service.name}
             </Heading>
 
             {!!addedBy && addedBy.fullName && (
-              <Text fontSize="sm" opacity={0.6}>
-                Added by {addedBy.fullName}
-              </Text>
+              <>
+                <Text fontSize="sm" opacity={0.6}>
+                  <chakra.span display={{ base: "none", md: "inline" }}>Added by {addedBy.fullName}</chakra.span>
+                  <chakra.span display={{ base: "inline", md: "none" }}>
+                    {service.numberOfPeople - service.users.length} Spot left
+                  </chakra.span>
+                </Text>
+              </>
             )}
           </Stack>
         </Stack>
 
-        <Stack direction="row" alignItems="center" spacing={4}>
-          <Text textTransform="uppercase" fontSize="xs" fontWeight="600">
+        <Stack direction="row" alignItems="center" spacing={{ base: 2, md: 4 }}>
+          <Text textTransform="uppercase" fontSize="xs" fontWeight="600" display={{ base: "none", md: "block" }}>
             {service.numberOfPeople - service.users.length} Spot left
           </Text>
 
@@ -341,7 +351,7 @@ const Service = ({ service }: { service: PageData["services"][0] }) => {
 
 const ServiceList = ({ services }: { services: PageData["services"] }) => {
   return (
-    <Stack spacing={4} px={6} py={4}>
+    <Stack spacing={4} px={{ base: 3, md: 6 }} py={4}>
       {!!services.length ? (
         services.map((service) => <Service key={service.id} service={service} />)
       ) : (

@@ -7,6 +7,7 @@ import { routeReplace } from "libs/utils";
 import { useRouter } from "next/router";
 import { PageData } from "pages/app/groups/[id]";
 import { useUser } from "hooks/auth";
+import ConfirmButton from "./confirm-button";
 
 type MembersProps = {
   members: PageData["members"];
@@ -133,15 +134,25 @@ const Members = ({ group, members, requests }: MembersProps) => {
 
                 {isAdmin && (
                   <Stack direction="row">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      colorScheme="red"
-                      isLoading={removeMember.isLoading}
-                      onClick={() => removeMember.mutate({ userId: member.user.id })}
+                    <ConfirmButton
+                      title="Remove Member"
+                      Content={<Text color="rgb(0 0 0 / 65%)">Are you sure you want to remove {member.user.fullName}?</Text>}
+                      ConfirmButton={
+                        <Button
+                          px={4}
+                          colorScheme="red"
+                          fontSize="sm"
+                          isLoading={removeMember.isLoading}
+                          onClick={() => removeMember.mutate({ userId: member.user.id })}
+                        >
+                          Remove Member
+                        </Button>
+                      }
                     >
-                      Remove Member
-                    </Button>
+                      <Button size="sm" variant="outline" colorScheme="red">
+                        Remove Member
+                      </Button>
+                    </ConfirmButton>
                   </Stack>
                 )}
               </Stack>

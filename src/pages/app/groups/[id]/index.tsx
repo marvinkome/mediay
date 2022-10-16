@@ -13,24 +13,22 @@ import GroupMembers from "components/group-members";
 import GroupList from "components/group-list";
 import ServiceList from "components/service-list";
 
-const Page = ({ user, group, members, requests, groups, services, ...props }: PageData) => {
-  const admin = members.find((m) => m.isAdmin);
-
+const Page = ({ group, members, requests, groups, services }: PageData) => {
   return (
     <Stack direction="row" minH="80vh" spacing={{ base: 0, md: 10 }}>
       <chakra.div flex={2}>
         <Tabs variant="soft-rounded">
           <Stack
-            px={6}
+            px={{ base: 3, md: 6 }}
             py={4}
             spacing={6}
             backdropFilter="auto"
             backdropBlur="12px"
             bgColor="rgba(255, 255, 255, 0.16)"
-            rounded="4px 4px 0px 0px"
+            rounded={{ base: "0px", md: "4px 4px 0px 0px" }}
           >
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Heading as="h1" fontSize="2xl" color="white">
+              <Heading as="h1" fontSize={{ base: "xl", md: "2xl" }} color="white">
                 {group.name}
               </Heading>
 
@@ -43,7 +41,7 @@ const Page = ({ user, group, members, requests, groups, services, ...props }: Pa
                 textTransform="uppercase"
                 leftIcon={<Icon boxSize={5} as={IoIosAdd} />}
               >
-                Add Subscription
+                <chakra.span>Add Subscription</chakra.span>
               </AddService>
             </Stack>
 
@@ -270,6 +268,10 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
       },
       layoutProps: {
         user,
+        backButton: {
+          href: "/app/groups",
+          title: "Groups",
+        },
       },
     },
   };
