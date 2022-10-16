@@ -104,7 +104,7 @@ const Service = ({ children, service, user, groupId }: ServiceProps) => {
 
               <IconButton
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 rounded="full"
                 onClick={() => onClose()}
                 aria-label="close-modal"

@@ -24,6 +24,7 @@ import {
 import { IoClose } from "react-icons/io5";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
+import { routeReplace } from "libs/utils";
 
 type EditServiceProps = {
   service: any;
@@ -31,9 +32,7 @@ type EditServiceProps = {
 };
 const EditService = ({ children, service }: EditServiceProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
-  const queryClient = useQueryClient();
-
-  const { query } = useRouter();
+  const { query, asPath } = useRouter();
 
   const [formData, setFormData] = React.useState({
     name: service.name,
@@ -45,11 +44,11 @@ const EditService = ({ children, service }: EditServiceProps) => {
 
   const editServiceMutation = useMutation(
     async (data: any) => {
-      return Api().post(`/groups/${query.id}/services/update`, data);
+      return Api().post(`/groups/${query.id}/services/${service.id}/update`, data);
     },
     {
       onSuccess: async () => {
-        await queryClient.invalidateQueries(["services", query.id]);
+        await routeReplace(asPath);
       },
     }
   );
@@ -57,17 +56,12 @@ const EditService = ({ children, service }: EditServiceProps) => {
   const onSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const data = {
+    // submit form
+    await editServiceMutation.mutateAsync({
       name: formData.name === "custom" ? formData.customName : formData.name,
       cost: Number(formData.cost),
       numberOfPeople: Number(formData.numberOfPeople),
       instructions: formData.instructions,
-    };
-
-    // submit form
-    await editServiceMutation.mutateAsync({
-      id: service.id,
-      ...data,
     });
 
     // reset and close modal

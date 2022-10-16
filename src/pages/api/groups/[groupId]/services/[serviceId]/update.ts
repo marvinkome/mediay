@@ -18,6 +18,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
     const {
       method,
       body,
+      query: { serviceId },
       session: { data: session },
     } = req;
 
@@ -32,7 +33,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.send({ redirect: true, url: "/" });
         }
 
-        const { id, instructions, ...payload } = body;
+        const { instructions, ...payload } = body;
 
         // validate body
         const { error } = bodySchema.validate({ instructions, ...payload });
@@ -45,11 +46,18 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
           return res.status(400).send({ error: "Invalid payload, Please check your data" });
         }
 
+        if (!serviceId) {
+          console.warn("%s No groupId or serviceId in params - %j", LOG_TAG, {
+            serviceId,
+          });
+
+          return res.status(404).send({ error: "No groupId or serviceId in params" });
+        }
+
         const serviceUser = await prisma.serviceUser.findFirst({
-          where: { serviceId: id, userId: session.userId },
+          where: { serviceId: serviceId as string, userId: session.userId },
           select: { isCreator: true },
         });
-
         if (!serviceUser || !serviceUser.isCreator) {
           console.warn("%s Only service creator can edit service - %j", LOG_TAG, {
             body,
@@ -59,11 +67,11 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         console.log("%s updating service - %j", LOG_TAG, {
-          service: { id },
+          service: serviceId,
         });
 
         const service = await prisma.service.update({
-          where: { id },
+          where: { id: serviceId as string },
           data: {
             ...payload,
             instructions: encryptData(instructions),

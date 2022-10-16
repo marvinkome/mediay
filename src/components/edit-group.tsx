@@ -22,28 +22,27 @@ import {
 import { IoClose } from "react-icons/io5";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
+import { routeReplace } from "libs/utils";
 
-type CreateGroupProps = {
+type EditGroupProps = {
   children: React.ReactElement;
+  group: { id: string; name: string };
 };
-const CreateGroup = ({ children }: CreateGroupProps) => {
+const EditGroup = ({ children, group }: EditGroupProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
-  const queryClient = useQueryClient();
   const router = useRouter();
 
   const [formData, setFormData] = React.useState({
-    name: "",
+    name: group.name || "",
   });
 
-  const createGroupMutation = useMutation(
+  const editGroupMutation = useMutation(
     async (data: any) => {
-      return Api().post("/groups/create", data);
+      return Api().post("/groups/update", data);
     },
     {
       onSuccess: async ({ payload }) => {
-        await queryClient.invalidateQueries(["groups"]);
-
-        router.push(`/app/groups/${payload.group.id}`);
+        await routeReplace(router.asPath);
       },
     }
   );
@@ -52,10 +51,12 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
     e.preventDefault();
 
     // submit form
-    await createGroupMutation.mutateAsync(formData);
+    await editGroupMutation.mutateAsync({
+      id: group.id,
+      ...formData,
+    });
 
-    // reset and close modal
-    setFormData({ name: "" });
+    // close modal
     onClose();
   };
 
@@ -78,12 +79,12 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
           <ModalHeader px={0} pt={4}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Heading fontSize="lg" fontWeight="600">
-                New Group
+                Edit Group
               </Heading>
 
               <IconButton
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 rounded="full"
                 onClick={() => onClose()}
                 aria-label="close-modal"
@@ -95,7 +96,7 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
 
           <ModalBody px={0} pt={0} pb={4}>
             <Stack w="full" spacing={4} justifyContent="space-between" as="form" onSubmit={onSubmitForm}>
-              <FormControl isInvalid={createGroupMutation.isError}>
+              <FormControl isInvalid={editGroupMutation.isError}>
                 <FormLabel mb={1} fontSize="xs" fontWeight="600" textTransform="uppercase" opacity={0.48}>
                   Group Name
                 </FormLabel>
@@ -108,12 +109,12 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
 
-                <FormErrorMessage>{(createGroupMutation.error as any)?.message}</FormErrorMessage>
+                <FormErrorMessage>{(editGroupMutation.error as any)?.message}</FormErrorMessage>
               </FormControl>
 
               <chakra.div pt={6} textAlign="right">
-                <Button colorScheme="primary" fontSize="sm" type="submit" isLoading={createGroupMutation.isLoading}>
-                  Create Group
+                <Button colorScheme="primary" fontSize="sm" type="submit" isLoading={editGroupMutation.isLoading}>
+                  Update Group
                 </Button>
               </chakra.div>
             </Stack>
@@ -124,4 +125,4 @@ const CreateGroup = ({ children }: CreateGroupProps) => {
   );
 };
 
-export default CreateGroup;
+export default EditGroup;

@@ -1,7 +1,9 @@
 import React from "react";
 import Api from "libs/api";
 import {
+  chakra,
   Button,
+  ButtonProps,
   FormControl,
   FormHelperText,
   FormLabel,
@@ -22,17 +24,16 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 import { IoClose } from "react-icons/io5";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/router";
+import { routeReplace } from "libs/utils";
 
-type AddServiceProps = {
-  children: React.ReactElement;
+type AddServiceProps = ButtonProps & {
+  children: React.ReactNode;
 };
-const AddService = ({ children }: AddServiceProps) => {
+const AddService = ({ children, ...props }: AddServiceProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
-  const queryClient = useQueryClient();
-
-  const { query } = useRouter();
+  const { query, asPath } = useRouter();
 
   const [formData, setFormData] = React.useState({
     name: "",
@@ -58,7 +59,7 @@ const AddService = ({ children }: AddServiceProps) => {
     },
     {
       onSuccess: async () => {
-        await queryClient.invalidateQueries(["services", query.id]);
+        await routeReplace(asPath);
       },
     }
   );
@@ -82,10 +83,10 @@ const AddService = ({ children }: AddServiceProps) => {
   };
 
   return (
-    <>
-      {React.cloneElement(children, {
-        onClick: () => onOpen(),
-      })}
+    <chakra.div>
+      <Button onClick={() => onOpen()} {...props}>
+        {children}
+      </Button>
 
       <Modal isOpen={isOpen} onClose={onClose} size="lg" motionPreset={useBreakpointValue({ base: "slideInBottom", md: "scale" })}>
         <ModalOverlay />
@@ -105,7 +106,7 @@ const AddService = ({ children }: AddServiceProps) => {
 
               <IconButton
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 rounded="full"
                 onClick={() => onClose()}
                 aria-label="close-modal"
@@ -239,7 +240,7 @@ const AddService = ({ children }: AddServiceProps) => {
           </ModalBody>
         </ModalContent>
       </Modal>
-    </>
+    </chakra.div>
   );
 };
 

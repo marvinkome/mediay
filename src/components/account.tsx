@@ -1,6 +1,7 @@
 import React from "react";
 import {
   Button,
+  ButtonProps,
   chakra,
   FormControl,
   FormLabel,
@@ -16,15 +17,14 @@ import {
   Stack,
   useBreakpointValue,
   useDisclosure,
-  useToast,
 } from "@chakra-ui/react";
 import { IoClose } from "react-icons/io5";
 
-type AccountProps = {
-  children: React.ReactElement;
-  user: { fullName: string; email: string };
+type AccountProps = ButtonProps & {
+  children?: React.ReactNode;
+  user: { id: string; fullName: string | null; email: string };
 };
-const Account = ({ children, user }: AccountProps) => {
+const Account = ({ children, user, ...props }: AccountProps) => {
   const { isOpen, onClose, onOpen } = useDisclosure();
 
   const [formValue, setFormValue] = React.useState({
@@ -37,10 +37,10 @@ const Account = ({ children, user }: AccountProps) => {
   };
 
   return (
-    <>
-      {React.cloneElement(children, {
-        onClick: () => onOpen(),
-      })}
+    <chakra.div>
+      <Button onClick={() => onOpen()} {...props}>
+        {children}
+      </Button>
 
       <Modal isOpen={isOpen} onClose={onClose} motionPreset={useBreakpointValue({ base: "slideInBottom", md: "scale" })}>
         <ModalOverlay />
@@ -60,7 +60,7 @@ const Account = ({ children, user }: AccountProps) => {
 
               <IconButton
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 rounded="full"
                 onClick={() => onClose()}
                 aria-label="close-modal"
@@ -109,7 +109,7 @@ const Account = ({ children, user }: AccountProps) => {
           </ModalBody>
         </ModalContent>
       </Modal>
-    </>
+    </chakra.div>
   );
 };
 

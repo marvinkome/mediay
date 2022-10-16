@@ -52,7 +52,7 @@ export const AuthContainer = ({ isOpen, onClose, children }: AuthContainerProps)
 
             <IconButton
               size="sm"
-              variant="outline"
+              variant="ghost"
               rounded="full"
               onClick={() => onClose()}
               aria-label="close-modal"

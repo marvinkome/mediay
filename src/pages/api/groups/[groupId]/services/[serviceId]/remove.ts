@@ -9,6 +9,7 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
     const {
       method,
       body,
+      query: { serviceId },
       session: { data: session },
     } = req;
 
@@ -24,17 +25,16 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         // validate body
-        const { id } = body;
-        if (!id) {
-          console.warn("%s Validation Error - %j", LOG_TAG, {
-            body,
+        if (!serviceId) {
+          console.warn("%s No serviceId in params - %j", LOG_TAG, {
+            serviceId,
           });
 
-          return res.status(400).send({ error: "Invalid payload" });
+          return res.status(404).send({ error: "No serviceId in params" });
         }
 
         const serviceUser = await prisma.serviceUser.findFirst({
-          where: { serviceId: id, userId: session.userId },
+          where: { serviceId: serviceId as string, userId: session.userId },
           select: { isCreator: true },
         });
 
@@ -47,13 +47,13 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         }
 
         console.log("%s deleting services - %j", LOG_TAG, {
-          service: { id },
+          service: { serviceId },
         });
 
         // remove service users
         const [, service] = await prisma.$transaction([
-          prisma.serviceUser.deleteMany({ where: { serviceId: id } }),
-          prisma.service.delete({ where: { id }, select: { id: true } }),
+          prisma.serviceUser.deleteMany({ where: { serviceId: serviceId as string } }),
+          prisma.service.delete({ where: { id: serviceId as string }, select: { id: true } }),
         ]);
 
         console.log("%s service deleted - %j", LOG_TAG, { service });
