@@ -28,6 +28,7 @@ import {
   EditableTextarea,
   Button,
 } from "@chakra-ui/react";
+import { ServiceIcon } from "components/service-icon";
 import { IoIosAdd } from "react-icons/io";
 import { FiMoreVertical, FiEdit } from "react-icons/fi";
 import { IoClose, IoExitOutline } from "react-icons/io5";
@@ -39,7 +40,7 @@ import { useUser } from "hooks/auth";
 import { PageData } from "pages/app/groups/[id]";
 import AddService from "components/add-service";
 import EditService from "components/edit-service";
-import ConfirmButton from "./confirm-button";
+import ConfirmButton from "components/confirm-button";
 
 const InstructionTextbox = ({ isOwner }: { isOwner: boolean }) => {
   const { isEditing, getEditButtonProps } = useEditableControls();
@@ -168,7 +169,7 @@ const Service = ({ service }: { service: PageData["services"][0] }) => {
           alignItems="center"
           {...(isMember ? { cursor: "pointer", onClick: () => serviceModal.onOpen() } : {})}
         >
-          <Image boxSize={10} src="/disney+.svg" alt={service.name} />
+          <ServiceIcon boxSize={10} src={`/${service.name}.svg`} alt={service.name} />
           <Stack spacing={{ base: 0, md: 1 }} justifyContent="center">
             <Heading as="h2" fontWeight="600" fontSize="md" textTransform="capitalize">
               {service.name}
@@ -310,7 +311,7 @@ const Service = ({ service }: { service: PageData["services"][0] }) => {
 
             <ModalBody px={0} pt={4} pb={4}>
               <Stack direction="row" alignItems="flex-start" rounded="4px" mb={5}>
-                <Image boxSize={10} src="/netflix.svg" alt="netflix" />
+                <ServiceIcon boxSize={10} src={`/${service.name}.svg`} alt={service.name} />
                 <Stack spacing={1} justifyContent="space-between">
                   <Heading as="h2" fontWeight="600" fontSize="md" textTransform="capitalize">
                     {service.name}

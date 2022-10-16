@@ -4,6 +4,7 @@ import Api from "libs/api";
 import supabase from "libs/supabase";
 import { GetServerSideProps } from "next";
 import { Button, Center, chakra, Container, Heading, Image, SimpleGrid, Stack, Text, useDisclosure } from "@chakra-ui/react";
+import { ServiceIcon } from "components/service-icon";
 import { withSessionSsr } from "libs/session";
 import { AuthContainer, EmailAuth, GoogleAuth } from "components/auth";
 import { useMutation } from "@tanstack/react-query";
@@ -106,7 +107,7 @@ const Page = (props: PageData) => {
                 <SimpleGrid columns={4} spacing={4}>
                   {props.services.map((service) => (
                     <Center key={service.id} textAlign="center" bgColor="#fff" rounded="4px" px={4} py={2}>
-                      <Image src="/disney+.svg" alt="Netflix" w="full" maxH="40px" />
+                      <ServiceIcon src={`/${service.name}.svg`} alt={service.name} w="full" maxH="40px" />
                     </Center>
                   ))}
                 </SimpleGrid>

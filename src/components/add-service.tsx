@@ -132,7 +132,7 @@ const AddService = ({ children, ...props }: AddServiceProps) => {
                   >
                     <option value="netflix">Netflix</option>
                     <option value="disney+">Disney+</option>
-                    <option value="prime-video">Prime Video</option>
+                    <option value="prime video">Prime Video</option>
                     <option value="spotify">Spotify</option>
                     <option value="youtube">Youtube</option>
                     <option value="custom">Custom service</option>
