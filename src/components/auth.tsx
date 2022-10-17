@@ -30,9 +30,9 @@ import { IoClose } from "react-icons/io5";
 
 const MotionFormControl = motion(FormControl);
 
-const appUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
+const appUrl = process.env.NEXT_PUBLIC_URL;
 if (!appUrl) {
-  throw new Error("NEXT_PUBLIC_VERCEL_URL env variable not set");
+  throw new Error("NEXT_PUBLIC_URL env variable not set");
 }
 
 type AuthContainerProps = {

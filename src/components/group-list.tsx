@@ -29,9 +29,9 @@ import ConfirmButton from "components/confirm-button";
 
 import { useUser } from "hooks/auth";
 
-const appUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
+const appUrl = process.env.NEXT_PUBLIC_URL;
 if (!appUrl) {
-  throw new Error("APP_URL env variable not set");
+  throw new Error("NEXT_PUBLIC_URL env variable not set");
 }
 
 const ListItem = ({ group }: { group: PageData["groups"][0] }) => {
