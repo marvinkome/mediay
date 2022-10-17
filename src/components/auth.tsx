@@ -32,7 +32,7 @@ const MotionFormControl = motion(FormControl);
 
 const appUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
 if (!appUrl) {
-  throw new Error("APP_URL env variable not set");
+  throw new Error("NEXT_PUBLIC_VERCEL_URL env variable not set");
 }
 
 type AuthContainerProps = {
@@ -153,7 +153,7 @@ type GoogleAuthProps = {
 };
 export const GoogleAuth = ({ auth }: GoogleAuthProps) => {
   // google login
-  const googleAuthSignIn = useOAuth({ provider: "google" });
+  const googleAuthSignIn = useOAuth({ provider: "google", redirect_to: appUrl });
   const googleAuthMutation = useMutation(async () => {
     const data = await googleAuthSignIn();
     return auth(data);
