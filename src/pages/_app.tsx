@@ -1,8 +1,9 @@
-import { ChakraProvider } from "@chakra-ui/react";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import Head from "next/head";
-import theme from "theme";
+import { ChakraProvider } from '@chakra-ui/react'
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import Head from 'next/head'
+import theme from 'theme'
+import 'custom-fonts.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -10,16 +11,16 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 10 * 60 * 1000, // 10 minutes
       cacheTime: 10 * 60 * 1000, // 10 minutes
-      retry: 1,
-    },
-  },
-});
+      retry: 1
+    }
+  }
+})
 
-const LayoutDefault = ({ children }: any) => <>{children}</>;
+const LayoutDefault = ({ children }: any) => <>{children}</>
 
 function App({ Component, pageProps }: any) {
-  const Layout = Component.Layout || LayoutDefault;
-  const layoutProps = pageProps.layoutProps || {};
+  const Layout = Component.Layout || LayoutDefault
+  const layoutProps = pageProps.layoutProps || {}
 
   return (
     <ChakraProvider theme={theme}>
@@ -35,7 +36,7 @@ function App({ Component, pageProps }: any) {
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ChakraProvider>
-  );
+  )
 }
 
-export default App;
+export default App
