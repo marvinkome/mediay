@@ -230,13 +230,15 @@ const getServerSidePropsFn: GetServerSideProps<PageData> = async ({ req, params 
     return { notFound: true };
   }
 
+  const isLoggedIn = !!req.session.data?.userId;
+
   return {
     props: {
       group,
       services: group.services,
       admin: groupAdmin.user,
-      hasSentRequest: !!group.requests.length,
-      isLoggedIn: !!req.session.data?.userId,
+      hasSentRequest: isLoggedIn ? !!group.requests.length : false,
+      isLoggedIn: isLoggedIn,
     },
   };
 };
