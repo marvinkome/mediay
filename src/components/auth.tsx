@@ -18,6 +18,7 @@ import {
   ModalOverlay,
   Stack,
   Text,
+  useBreakpointValue,
   useDisclosure,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
@@ -42,11 +43,18 @@ type AuthContainerProps = {
 };
 export const AuthContainer = ({ isOpen, onClose, children }: AuthContainerProps) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered size="sm" scrollBehavior="inside">
+    <Modal isOpen={isOpen} onClose={onClose} motionPreset={useBreakpointValue({ base: "slideInBottom", md: "scale" })}>
       <ModalOverlay />
 
-      <ModalContent my={8} mx={10} overflow="hidden" maxW="md">
-        <ModalHeader px={6} py={3}>
+      <ModalContent
+        px={6}
+        rounded="0px"
+        overflow="hidden"
+        mb={{ base: "0", md: 8 }}
+        pos={{ base: "fixed", md: "relative" }}
+        bottom={{ base: "0px", md: "initial" }}
+      >
+        <ModalHeader px={0} pt={4}>
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Image src="/logo-gray.svg" alt="logo" boxSize="30px" />
 
@@ -62,20 +70,20 @@ export const AuthContainer = ({ isOpen, onClose, children }: AuthContainerProps)
           </Stack>
         </ModalHeader>
 
-        <ModalBody p={0}>
-          <Container maxW="sm" py={0}>
-            <Stack textAlign="center">
-              <Heading fontSize="xl">Sign up or Log in to continue</Heading>
-            </Stack>
+        <ModalBody px={2} pt={0} pb={4}>
+          <Stack textAlign="center">
+            <Heading fontSize="xl" fontWeight="600">
+              Sign up or Log in to continue
+            </Heading>
+          </Stack>
 
-            <Stack my={8} spacing={2}>
-              {children}
+          <Stack my={8} spacing={2}>
+            {children}
 
-              <Text fontSize="xs" color="rgb(0 0 0 / 58%)">
-                By continuing, you agree to our Terms of Use and our Privacy Policy.
-              </Text>
-            </Stack>
-          </Container>
+            <Text fontSize="xs" color="rgb(0 0 0 / 58%)">
+              By continuing, you agree to our Terms of Use and our Privacy Policy.
+            </Text>
+          </Stack>
         </ModalBody>
       </ModalContent>
     </Modal>
@@ -162,7 +170,7 @@ export const GoogleAuth = ({ auth }: GoogleAuthProps) => {
   return (
     <Stack>
       <Button
-        variant="outline"
+        variant="ghost"
         fontSize="sm"
         colorScheme="secondary"
         leftIcon={<Icon boxSize="20px" as={FcGoogle} />}
