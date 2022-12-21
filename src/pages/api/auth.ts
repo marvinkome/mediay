@@ -25,7 +25,6 @@ const handle = async (req: NextApiRequest, res: NextApiResponse) => {
         const { access_token, full_name } = body;
 
         if (!access_token) {
-          console.warn("%s no access token in payload - %j", LOG_TAG, { body });
           return res.status(400).json({ error: "Authentication failed" });
         }
 

@@ -3,7 +3,6 @@ import Api from "libs/api";
 import {
   Button,
   chakra,
-  Container,
   FormControl,
   FormLabel,
   Heading,
@@ -24,7 +23,7 @@ import {
 import { motion } from "framer-motion";
 import { FcGoogle } from "react-icons/fc";
 import { useRouter } from "next/router";
-import { useOAuth } from "hooks/auth";
+import { useOath2Login } from "libs/react-oauth2";
 import { useMutation } from "@tanstack/react-query";
 import supabase from "libs/supabase";
 import { IoClose } from "react-icons/io5";
@@ -161,9 +160,23 @@ type GoogleAuthProps = {
 };
 export const GoogleAuth = ({ auth }: GoogleAuthProps) => {
   // google login
-  const googleAuthSignIn = useOAuth({ provider: "google", redirect_to: appUrl });
+  const url = React.useMemo(() => {
+    const url = "https://accounts.google.com/o/oauth2/v2/auth";
+    const params = new URLSearchParams({
+      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
+      redirect_uri: process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URL || "",
+      response_type: "code",
+      access_type: "offline",
+      prompt: "consent",
+      scope: "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+    }).toString();
+
+    return `${url}?${params}`;
+  }, []);
+
+  const googleSignIn = useOath2Login({ id: "google-login", url });
   const googleAuthMutation = useMutation(async () => {
-    const data = await googleAuthSignIn();
+    const data = await googleSignIn();
     return auth(data);
   });
 
@@ -198,7 +211,7 @@ const Auth = ({ children }: SignupProps) => {
 
   // google login
   const googleAuth = async (data: any) => {
-    await Api().post("/auth", data);
+    await Api().post("/google-auth", data);
     router.push("/app");
   };
 
